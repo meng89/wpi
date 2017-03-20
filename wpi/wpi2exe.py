@@ -3,7 +3,7 @@ import sys
 import tempfile
 from subprocess import Popen, PIPE
 
-from wpi import main
+from wpi import version
 
 
 def cur_file_dir():
@@ -78,7 +78,7 @@ def verpath():
                       '/s comment "fixed this and that" '
                       .format(os.path.realpath(os.path.join(cur_file_dir(), 'verpatch.exe')),
                               os.path.realpath(os.path.join(cur_file_dir(), '_dist/wpi.exe')),
-                              version=main.VERSION,
+                              version=version.__version__,
                               )
                       )
 
@@ -111,5 +111,4 @@ def main():
 
 
 if __name__ == '__main__':
-    find_7z_path()
-    #main()
+    main()
