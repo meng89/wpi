@@ -17,10 +17,6 @@ c_ = cur_file_dir()
 p_ = os.path.realpath(os.path.join(cur_file_dir(), '..'))
 
 
-def clean():
-    pass
-
-
 def build():
     # {} --distpath {}
     pyinstaller_p = Popen('pyinstaller {} --workpath {} --distpath {} --upx-dir {}'.format(
@@ -102,8 +98,6 @@ def find_7z_path():
 
 
 def main():
-    clean()
-
     build()
 
     verpath()
