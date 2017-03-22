@@ -98,11 +98,7 @@ def find_7z_path():
 
 
 def main():
-    build()
+    build2(script=os.path.join(cur_file_dir(), 'wpi.py'), distpath=)
 
     verpath()
     sha256()
-
-
-if __name__ == '__main__':
-    main()

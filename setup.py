@@ -39,5 +39,15 @@ setup(name=NAME,
           'wpi',
           'wpi.inf'
       ],
+      scripts=[
+          'main.py',
+          'wpi2exe.py'
+      ],
+      # entry_points={
+      #    'console_scripts': [
+      #        'wpi=wpi.main:main',
+      #        'wpi2exe=wpi.wpi2exe:main'
+      #    ],
+      #},
       install_requires=requirements,
       classifiers=CLASSIFIERS)

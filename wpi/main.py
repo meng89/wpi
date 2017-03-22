@@ -5,10 +5,7 @@ import platform
 
 import chardet
 
-from wpi import load_module, archivelib, ALL_BITS, ALL_OS, MY_BIT, MY_OS
-
-
-VERSION = '0.0.1'
+from wpi import load_module, archivelib, ALL_BITS, ALL_OS, MY_BIT, MY_OS, version
 
 
 def app_path():
@@ -421,7 +418,7 @@ def print_head():
         '#                                                 #\n'
         '#            Windows Printer Installer            #\n'
         '#                                                 #\n'
-        '# Version: {}'.format(VERSION) + ' ' * (51 - 11 - len(VERSION) - 1) + '#\n'
+        '# Version: {}'.format(version.__version__) + ' ' * (51 - 11 - len(version.__version__) - 1) + '#\n'
         '# Author: Chen Meng                               #\n'
         '# HomePage: https://github.com/meng89/wpi         #\n'
         '###################################################'
@@ -429,6 +426,14 @@ def print_head():
 
 
 def main():
+
+    import tempfile
+    os.chdir(tempfile.gettempdir())
+    print_head()
+    if getattr(sys, 'frozen', False) is not False:
+        make_driver_dir()
+        copy_demo_set()
+
     if not ctypes.windll.shell32.IsUserAnAdmin():
         print('Not Administrator!')
         exit()
@@ -479,10 +484,4 @@ def copy_demo_set():
 
 
 if __name__ == '__main__':
-    import tempfile
-    os.chdir(tempfile.gettempdir())
-    print_head()
-    if getattr(sys, 'frozen', False) is not False:
-        make_driver_dir()
-        copy_demo_set()
     main()
