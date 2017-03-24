@@ -46,7 +46,7 @@ setup(name=NAME,
       entry_points={
           'console_scripts': [
                'wpi=wpi.main:main',
-               'wpi2exe=wpi2exe:main'
+               'wpi2exe=wpi2exe.main:main'
           ],
       },
       install_requires=requirements,

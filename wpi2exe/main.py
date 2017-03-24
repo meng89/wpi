@@ -59,7 +59,10 @@ def build2(script, distpath, name=None, console=True, upx_dir=None, binarys=None
     for src, dest in binarys:
         cmd += '--add-binary "{}:{}" '.format(src, dest)
 
+    print('cmd: ', cmd)
     Popen(cmd, shell=True).wait()
+
+    os.removedirs(workpath)
 
 
 def verpath():
@@ -98,7 +101,18 @@ def find_7z_path():
 
 
 def main():
-    build2(script=os.path.join(cur_file_dir(), 'wpi.py'), distpath=)
+    import wpi.main
+    print(wpi.main.__file__)
+    print(os.path.expanduser('~'))
+    build2(
+        script=os.path.join(wpi.main.__file__),
+        distpath=os.path.expanduser('~'),
+        name='wpi'
+    )
 
     verpath()
     sha256()
+
+
+if __name__ == '__main__':
+    main()
