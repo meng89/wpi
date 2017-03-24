@@ -17,20 +17,8 @@ c_ = cur_file_dir()
 p_ = os.path.realpath(os.path.join(cur_file_dir(), '..'))
 
 
-def build():
-    # {} --distpath {}
-    pyinstaller_p = Popen('pyinstaller {} --workpath {} --distpath {} --upx-dir {}'.format(
-        os.path.join(c_, 'wpi.spec'),
-        os.path.join(c_, '_build'),
-        os.path.realpath(os.path.join(cur_file_dir(), '_dist')),
-        c_,
-
-    ), shell=True, stdout=PIPE)
-
-    pyinstaller_p.wait()
-
-
-def build2(script, distpath, name=None, console=True, upx_dir=None, binarys=None,  output_specpath=None):
+def build(script, distpath, name=None, console=True, upx_dir=None, binarys=None,  output_specpath=None):
+    import shutil
     binarys = binarys or []
 
     workpath = tempfile.mkdtemp()
@@ -57,35 +45,29 @@ def build2(script, distpath, name=None, console=True, upx_dir=None, binarys=None
         cmd += '--windowed '
 
     for src, dest in binarys:
-        cmd += '--add-binary "{}:{}" '.format(src, dest)
+        cmd += '--add-binary "{}";"{}" '.format(src, dest)
 
-    print('cmd: ', cmd)
+    print('\npyinstaller cmd: \n', cmd, '\n')
+
     Popen(cmd, shell=True).wait()
 
-    os.removedirs(workpath)
+    shutil.rmtree(workpath)
 
 
-def verpath():
+def run_verpatch(exe_path, verpatch_path):
     sys.path.append(p_)
-    # print(os.path.realpath(os.path.join(cur_file_dir(), '../dist/wpi.exe')))
-    verpath_p = Popen('{} {} '
-                      '{version} '
-                      '/va /pv {version} '
-                      '/s description "Windows Printer Installer" '
-                      '/s product "Windows Printer Installer" '
-                      '/s copyright "Chen Meng, 2017" '
-                      '/s comment "fixed this and that" '
-                      .format(os.path.realpath(os.path.join(cur_file_dir(), 'verpatch.exe')),
-                              os.path.realpath(os.path.join(cur_file_dir(), '_dist/wpi.exe')),
-                              version=version.__version__,
-                              )
-                      )
 
-    verpath_p.wait()
+    cmd = '{} {} ' \
+          '{version} ' \
+          '/va /pv {version} '\
+          '/s description "Windows Printer Installer" '\
+          '/s product "Windows Printer Installer" '\
+          '/s copyright "Chen Meng, 2017" '\
+          .format(verpatch_path, exe_path, version=version.__version__ + '.0', )
 
+    print('\nverpathc cmd: \n', cmd, '\n')
 
-def sha256():
-    pass
+    Popen(cmd, shell=True).wait()
 
 
 def find_7z_path():
@@ -101,17 +83,55 @@ def find_7z_path():
 
 
 def main():
+    import hashlib
+    import shutil
     import wpi.main
-    print(wpi.main.__file__)
-    print(os.path.expanduser('~'))
-    build2(
+    import wpi.set_sample
+    from wpi import load_module
+
+    from wpi2exe import config_sample
+
+    config_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi2exe')
+    os.makedirs(config_dir, exist_ok=True)
+
+    user_config_sample_path = os.path.join(config_dir, 'config_sample.py')
+    user_config_path = os.path.join(config_dir, 'config.py')
+
+    print(user_config_path)
+
+    if not os.path.exists(user_config_sample_path) or \
+            hashlib.sha512(open(config_sample.__file__, 'rb').read()).hexdigest() != \
+            hashlib.sha512(open(user_config_sample_path, 'rb').read()).hexdigest():
+        shutil.copyfile(config_sample.__file__, user_config_sample_path)
+
+    if not os.path.exists(user_config_path):
+        shutil.copyfile(user_config_sample_path, user_config_path)
+        print('"config.py" not found, copied. you may want to edit {} and rerun this again'.format(user_config_path))
+        exit()
+
+    config = load_module(user_config_path)
+
+    verpatch_path = getattr(config, 'verpathc_path', None)
+    upx_dir = getattr(config, 'upx_dir', None)
+    z7_dir = getattr(config, 'z7_dir', None) or wpi.main.find_7z_in_reg()[0]
+
+    output_dir = getattr(config, 'output_dir', None) or os.path.expanduser('~')
+    output_filename = getattr(config, 'output_filename', None) or 'wpi'
+
+    build(
         script=os.path.join(wpi.main.__file__),
-        distpath=os.path.expanduser('~'),
-        name='wpi'
+        distpath=output_dir,
+        name=output_filename,
+        upx_dir=upx_dir,
+        binarys=[
+            (os.path.join(z7_dir, wpi.main.Z7_exe_filename), wpi.main.Z7_folder),
+            (os.path.join(z7_dir, wpi.main.Z7_dll_filename), wpi.main.Z7_folder),
+            (os.path.join(wpi.set_sample.__file__), '.')
+        ]
     )
 
-    verpath()
-    sha256()
+    if verpatch_path is not None:
+        run_verpatch(verpatch_path=verpatch_path, exe_path=os.path.join(output_dir, output_filename + '.exe'))
 
 
 if __name__ == '__main__':

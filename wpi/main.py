@@ -60,15 +60,20 @@ def find_7z_in_reg():
     return b32_location, b64_location
 
 
+Z7_folder = '7z'
+Z7_exe_filename = '7z.exe'
+Z7_dll_filename = '7z.dll'
+
+
 def path_of_7z():
     if platform.system() == 'Windows':
         try:
-            _7z_meipass = os.path.join(getattr(sys, '_MEIPASS'), '7z/7z.exe')
+            _7z_meipass = os.path.join(getattr(sys, '_MEIPASS'), Z7_folder, Z7_exe_filename)
             if os.path.isfile(_7z_meipass):
                 return _7z_meipass
 
         except AttributeError:
-            for _7z_path in [os.path.join(one, '7z.exe') for one in find_7z_in_reg()]:
+            for _7z_path in [os.path.join(one, Z7_exe_filename) for one in find_7z_in_reg()]:
                 if os.path.isfile(_7z_path):
                     return _7z_path
         else:
@@ -426,13 +431,13 @@ def print_head():
 
 
 def main():
-
     import tempfile
+
     os.chdir(tempfile.gettempdir())
     print_head()
     if getattr(sys, 'frozen', False) is not False:
         make_driver_dir()
-        copy_demo_set()
+        copy_set_sample()
 
     if not ctypes.windll.shell32.IsUserAnAdmin():
         print('Not Administrator!')
@@ -473,12 +478,14 @@ def make_driver_dir():
                 pass
 
 
-def copy_demo_set():
+def copy_set_sample():
     import shutil
-    demo_set_target = os.path.join(app_path(), 'demo_set.py')
-    if not os.path.exists(demo_set_target):
+    from wpi import set_sample
+    set_sample_filename = os.path.splitext(os.path.split(set_sample.__file__)[1])[0] + '.py'
+    set_sample_target = os.path.join(app_path(), set_sample_filename)
+    if not os.path.exists(set_sample_target):
         try:
-            shutil.copy(os.path.join(meipass_path(), 'demo_set.py'), demo_set_target)
+            shutil.copy(os.path.join(meipass_path(), set_sample_filename), set_sample_target)
         except Exception:
             pass
 
