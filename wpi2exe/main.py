@@ -1,7 +1,7 @@
 import os
 import sys
 import tempfile
-from subprocess import Popen, PIPE
+from subprocess import Popen
 
 from wpi import version
 
@@ -85,8 +85,9 @@ def find_7z_path():
 def main():
     import hashlib
     import shutil
-    import wpi.main
+
     import wpi.set_sample
+    import wpi.main
     from wpi import load_module
 
     from wpi2exe import config_sample
