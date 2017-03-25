@@ -356,23 +356,40 @@ def install_driver(des_driver):
         inf_path = os.path.join(tempdir, iia)
 
     else:
+        archive = None
+        iia = None
+
+        inf_path_ = None
         best_archive_infs = get_best_archive_infs_list(driver=des_driver.name)
         if best_archive_infs:
-            archivelib.extract_all(best_archive_infs[0][0], tempdir, path_of_7z())
-            inf_path = os.path.join(tempdir, best_archive_infs[0][1][0])
+            archive = best_archive_infs[0][0]
+            iia = best_archive_infs[0][1][0]
+            # archivelib.extract_all(best_archive_infs[0][0], tempdir, path_of_7z())
+            # inf_path = os.path.join(tempdir, best_archive_infs[0][1][0])
+
         else:
             best_infs = get_best_infs_list(des_driver.name)
             if best_infs:
-                pass
+                inf_path_ = best_infs[0]
+
             else:
                 compatible_archive_infs = get_compatible_archive_infs_list(des_driver.name)
                 if compatible_archive_infs:
-                    archivelib.extract_all(compatible_archive_infs[0][0], tempdir, path_of_7z())
-                    inf_path = os.path.join(tempdir, compatible_archive_infs[0][1][0])
+                    archive = best_archive_infs[0][0]
+                    iia = best_archive_infs[0][1][0]
+
                 else:
                     compatible_infs = get_compatible_infs_list(des_driver.name)
                     if compatible_infs:
-                        pass
+                        inf_path_ = compatible_infs[0]
+
+        if archive and iia:
+            archivelib.extract_all(archive, tempdir, path_of_7z())
+            inf_path = os.path.join(tempdir, iia)
+        elif inf_path_:
+            inf_path = inf_path_
+        else:
+            pass
 
     sysdrivers = Drivers()
     print(inf_path, des_driver.name)
