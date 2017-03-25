@@ -333,34 +333,31 @@ def install_port(des_port, del_printer_if_necessary=True):
 
 def install_driver(des_driver):
     import tempfile
+    import shutil
 
     from wpi.driver import Drivers
 
     # archive=None, inf_in_archive=None, inf_path=None
     inf_path = None
 
-    tempdir = None
+    tempdir = tempfile.mkdtemp()
 
-    if des_driver.archive:
-        iia = des_driver.inf_in_archive
-        if iia is None:
-            infs = get_legal_infs_list(des_driver.archive, des_driver.name)
-            if infs:
-                tempdir = tempfile.mkdtemp()
-                archivelib.extract_all(des_driver.archive, tempdir, path_of_7z())
-                inf_path = os.path.join(tempdir, infs[0])
-        else:
-            tempdir = tempfile.mkdtemp()
-            archivelib.extract_all(des_driver.archive, tempdir, path_of_7z())
-            inf_path = os.path.join(tempdir, iia)
-
-    elif des_driver.inf_path:
+    if des_driver.inf_path:
         inf_path = des_driver.inf_path
+
+    elif des_driver.archive:
+        if des_driver.inf_in_archive:
+            iia = des_driver.inf_in_archive
+        else:
+            infs = get_legal_infs_list(des_driver.archive, des_driver.name)
+            iia = infs[0]
+
+        archivelib.extract_all(des_driver.archive, tempdir, path_of_7z())
+        inf_path = os.path.join(tempdir, iia)
 
     else:
         best_archive_infs = get_best_archive_infs_list(driver=des_driver.name)
         if best_archive_infs:
-            tempdir = tempfile.mkdtemp()
             archivelib.extract_all(best_archive_infs[0][0], tempdir, path_of_7z())
             inf_path = os.path.join(tempdir, best_archive_infs[0][1][0])
         else:
@@ -370,7 +367,6 @@ def install_driver(des_driver):
             else:
                 compatible_archive_infs = get_compatible_archive_infs_list(des_driver.name)
                 if compatible_archive_infs:
-                    tempdir = tempfile.mkdtemp()
                     archivelib.extract_all(compatible_archive_infs[0][0], tempdir, path_of_7z())
                     inf_path = os.path.join(tempdir, compatible_archive_infs[0][1][0])
                 else:
@@ -382,11 +378,10 @@ def install_driver(des_driver):
     print(inf_path, des_driver.name)
     sysdrivers.add_by_inf(inf_path, des_driver.name)
 
-    if tempdir is not None:
-        try:
-            os.removedirs(tempdir)
-        except OSError:
-            pass
+    try:
+        shutil.rmtree(tempdir)
+    except OSError:
+        pass
 
 
 def install(module):
