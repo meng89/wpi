@@ -1,0 +1,13 @@
+include requirements.txt
+include LICENSE
+include tox.ini
+
+recursive-include epubaker/static *
+
+recursive-include docs *
+prune docs/_build
+
+recursive-include test *.py *.xml
+recursive-include test/cover *
+
+prune *.pyc
