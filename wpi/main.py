@@ -1,85 +1,12 @@
 import ctypes
-import sys
 import os
-import platform
+import sys
 
 import chardet
 
 from wpi import load_module, archivelib, ALL_BITS, ALL_OS, MY_BIT, MY_OS, version
 
-
-def app_path():
-    if getattr(sys, 'frozen', False):
-        return os.path.dirname(sys.executable)
-    elif __file__:
-        return os.path.dirname(__file__)
-
-
-def meipass_path():
-    """ Get absolute path to resource, works for dev and for PyInstaller """
-    try:
-        base_path = getattr(sys, '_MEIPASS')
-    except AttributeError:
-        base_path = os.path.abspath(".")
-
-    return base_path
-
-
-def drivers_dir():
-    if getattr(sys, 'frozen', False):
-        return os.path.realpath(os.path.join(app_path(), 'drivers'))
-
-    else:
-        for _ in (r'Z:\printer_drivers', ):
-            if os.path.exists(_) and os.path.isdir(_):
-                return _
-        raise FileNotFoundError
-
-
-archive_exts = ['.zip', '.7z', '.rar', '.exe']
-
-
-def find_7z_in_reg():
-    regkeys = (r'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
-               r'HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall')
-
-    from wpi.reg import Node
-
-    b32_location = None
-    b64_location = None
-
-    for one in regkeys:
-        n = Node(one)
-        for k, sub in n.items():
-            if k == '7-Zip':
-                if sub.tips['DisplayName'].endswith('(x64)'):
-                    b64_location = sub.tips['InstallLocation']
-                else:
-                    b32_location = sub.tips['InstallLocation']
-
-    return b32_location, b64_location
-
-
-Z7_folder = '7z'
-Z7_exe_filename = '7z.exe'
-Z7_dll_filename = '7z.dll'
-
-
-def path_of_7z():
-    if platform.system() == 'Windows':
-        try:
-            _7z_meipass = os.path.join(getattr(sys, '_MEIPASS'), Z7_folder, Z7_exe_filename)
-            if os.path.isfile(_7z_meipass):
-                return _7z_meipass
-
-        except AttributeError:
-            for _7z_path in [os.path.join(one, Z7_exe_filename) for one in find_7z_in_reg()]:
-                if os.path.isfile(_7z_path):
-                    return _7z_path
-        else:
-            raise FileNotFoundError
-    else:
-        return '7z'
+from wpi.env import is_exe, app_path, meipass_path, drivers_dir, archive_exts, path_of_7z, bundle_data_folder
 
 
 def split_all(path):
@@ -446,38 +373,44 @@ def main():
     import tempfile
 
     os.chdir(tempfile.gettempdir())
+    
     print_head()
-    if getattr(sys, 'frozen', False) is not False:
+    if is_exe():
         make_driver_dir()
         copy_set_sample()
 
     if not ctypes.windll.shell32.IsUserAnAdmin():
         print('Not Administrator!')
         exit()
-    try:
-        sysinput = sys.argv[1]
-    except Exception:
-        sysinput = None
+
+    if len(sys.argv) >= 2:
+        set_file = sys.argv[1]
+        if set_file.strip().lower.endswith('.py') and os.path.exists(set_file):
+            set_ = load_module(set_file.strip())
+            install(set_)
+
+        exit()
+
+    elif getattr(sys, 'frozen', False):
+        set_file = os.path.join(app_path(), '_.py')
+        if os.path.exists(set_file):
+            set_ = load_module(set_file.strip())
+            install(set_)
+
+            exit()
 
     while True:
         print('\nPlease input a set of printers, q to quit')
         print('>', end='')
-        if sysinput is not None:
-            user_input = sysinput
-            print(sysinput)
-            sysinput = None
-        else:
-            user_input = None
 
-        if user_input is None:
-            user_input = input()
+        user_input = input()
 
         if user_input.strip().lower() in ('q', 'quit', 'e', 'exit'):
             break
 
         elif user_input.strip().lower().endswith('.py'):
-            profile = load_module(user_input.strip())
-            install(profile)
+            set_ = load_module(user_input.strip())
+            install(set_)
 
 
 def make_driver_dir():
@@ -485,20 +418,21 @@ def make_driver_dir():
     for bit in ALL_BITS:
         for os_ in ALL_OS:
             try:
-                os.makedirs(os.path.realpath(os.path.join(app_path(), 'drivers', bit, os_)))
-            except Exception:
+                os.makedirs(os.path.realpath(os.path.join(app_path(), 'drivers', bit, os_)), exist_ok=True)
+            except OSError:
                 pass
 
 
 def copy_set_sample():
     import shutil
     from wpi import set_sample
+
     set_sample_filename = os.path.splitext(os.path.split(set_sample.__file__)[1])[0] + '.py'
     set_sample_target = os.path.join(app_path(), set_sample_filename)
     if not os.path.exists(set_sample_target):
         try:
-            shutil.copy(os.path.join(meipass_path(), set_sample_filename), set_sample_target)
-        except Exception:
+            shutil.copy(os.path.join(meipass_path(), bundle_data_folder, set_sample_filename), set_sample_target)
+        except OSError:
             pass
 
 

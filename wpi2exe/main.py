@@ -3,7 +3,7 @@ import sys
 import tempfile
 from subprocess import Popen
 
-from wpi import version
+import wpi.version
 
 
 def cur_file_dir():
@@ -63,7 +63,7 @@ def run_verpatch(exe_path, verpatch_path):
           '/s description "Windows Printer Installer" '\
           '/s product "Windows Printer Installer" '\
           '/s copyright "Chen Meng, 2017" '\
-          .format(verpatch_path, exe_path, version=version.__version__ + '.0', )
+          .format(verpatch_path, exe_path, version=wpi.version.__version__ + '.0', )
 
     print('\nverpathc cmd: \n', cmd, '\n')
 
@@ -83,11 +83,9 @@ def find_7z_path():
 
 
 def main():
-    import hashlib
     import shutil
-
-    import wpi.set_sample
     import wpi.main
+    import wpi.env
     from wpi import load_module
 
     from wpi2exe import config_sample
@@ -101,8 +99,7 @@ def main():
     print(user_config_path)
 
     if not os.path.exists(user_config_sample_path) or \
-            hashlib.sha512(open(config_sample.__file__, 'rb').read()).hexdigest() != \
-            hashlib.sha512(open(user_config_sample_path, 'rb').read()).hexdigest():
+            open(config_sample.__file__, 'rb').read() != open(user_config_sample_path, 'rb').read():
         shutil.copyfile(config_sample.__file__, user_config_sample_path)
 
     if not os.path.exists(user_config_path):
@@ -114,7 +111,6 @@ def main():
 
     verpatch_path = getattr(config, 'verpathc_path', None)
     upx_dir = getattr(config, 'upx_dir', None)
-    z7_dir = getattr(config, 'z7_dir', None) or wpi.main.find_7z_in_reg()[0]
 
     output_dir = getattr(config, 'output_dir', None) or os.path.expanduser('~')
     output_filename = getattr(config, 'output_filename', None) or 'wpi'
@@ -124,11 +120,7 @@ def main():
         distpath=output_dir,
         name=output_filename,
         upx_dir=upx_dir,
-        binarys=[
-            (os.path.join(z7_dir, wpi.main.Z7_exe_filename), wpi.main.Z7_folder),
-            (os.path.join(z7_dir, wpi.main.Z7_dll_filename), wpi.main.Z7_folder),
-            (os.path.join(wpi.set_sample.__file__), '.')
-        ]
+        binarys=[(path, wpi.env.bundle_data_folder) for path in wpi.env.bundle_files]
     )
 
     if verpatch_path is not None:

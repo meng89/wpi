@@ -2,6 +2,8 @@ import copy
 import time
 
 import win32serviceutil
+from win32com.client import GetObject
+from wpi import reg
 
 import hooky
 
@@ -32,9 +34,6 @@ _LOCAL_PORT_REG_KEY = r'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\Current
 
 class Ports(hooky.Dict):
     def __init__(self, computer=None, account=None):
-        from win32com.client import GetObject
-        from . import reg
-
         super(Ports, self).__init__()
 
         self._tcpipobj = GetObject('winmgmts:/root/cimv2').Get('Win32_TCPIPPrinterPort')
