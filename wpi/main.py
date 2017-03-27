@@ -2,11 +2,13 @@ import ctypes
 import os
 import sys
 
+import shutil
+
 import chardet
 
 from wpi import load_module, archivelib, ALL_BITS, ALL_OS, MY_BIT, MY_OS, version
 
-from wpi.env import is_exe, app_path, meipass_path, drivers_dir, archive_exts, path_of_7z, bundle_data_folder
+from wpi.env import is_exe, app_path, meipass_path, bundle_data_folder
 
 
 def split_all(path):
@@ -258,7 +260,7 @@ def install_port(des_port, del_printer_if_necessary=True):
         install_it()
 
 
-def install_driver(des_driver):
+def install_driver(des_driver, config):
     import tempfile
     import shutil
 
@@ -279,7 +281,7 @@ def install_driver(des_driver):
             infs = get_legal_infs_list(des_driver.archive, des_driver.name)
             iia = infs[0]
 
-        archivelib.extract_all(des_driver.archive, tempdir, path_of_7z())
+        archivelib.extract_all(des_driver.archive, tempdir, config.z7_path)
         inf_path = os.path.join(tempdir, iia)
 
     else:
@@ -311,7 +313,7 @@ def install_driver(des_driver):
                         inf_path_ = compatible_infs[0]
 
         if archive and iia:
-            archivelib.extract_all(archive, tempdir, path_of_7z())
+            archivelib.extract_all(archive, tempdir, config.z7_path)
             inf_path = os.path.join(tempdir, iia)
         elif inf_path_:
             inf_path = inf_path_
@@ -328,10 +330,10 @@ def install_driver(des_driver):
         pass
 
 
-def install(module):
+def install(printers, config):
     from wpi.printer import Printers
 
-    for p in module.printers:
+    for p in printers:
 
         try:
             print('try install driver')
@@ -371,34 +373,47 @@ def print_head():
 
 def main():
     import tempfile
+    from wpi.env import load_conifg, Config, supply_config, user_config_path
 
     os.chdir(tempfile.gettempdir())
-    
+
     print_head()
+
+    if len(sys.argv) > 3:
+        raise TypeError
+
+    if not ctypes.windll.shell32.IsUserAnAdmin():
+        print('Not run as Administrator!')
+        exit()
+
+    if len(sys.argv) > 1:
+        module = load_module(sys.argv[1])
+        config = Config()
+
+        if len(sys.argv) > 2:
+            config = load_conifg(sys.argv[2])
+
+        merged_config = supply_config(config)
+
+        install(module.printers, merged_config)
+
+        exit()
+
+    elif len(sys.argv) == 1:
+        module_file = os.path.join(app_path(), '_.py')
+        config = load_conifg(user_config_path)
+        if os.path.exists(module_file):
+            module = load_module(module_file.strip())
+            install(module.printers, config)
+
+            exit()
+
     if is_exe():
         make_driver_dir()
         copy_set_sample()
 
-    if not ctypes.windll.shell32.IsUserAnAdmin():
-        print('Not Administrator!')
-        exit()
-
-    if len(sys.argv) >= 2:
-        set_file = sys.argv[1]
-        if set_file.strip().lower.endswith('.py') and os.path.exists(set_file):
-            set_ = load_module(set_file.strip())
-            install(set_)
-
-        exit()
-
-    elif getattr(sys, 'frozen', False):
-        set_file = os.path.join(app_path(), '_.py')
-        if os.path.exists(set_file):
-            set_ = load_module(set_file.strip())
-            install(set_)
-
-            exit()
-
+    config = load_conifg(user_config_path)
+    merged_config = supply_config(config)
     while True:
         print('\nPlease input a set of printers, q to quit')
         print('>', end='')
@@ -409,8 +424,8 @@ def main():
             break
 
         elif user_input.strip().lower().endswith('.py'):
-            set_ = load_module(user_input.strip())
-            install(set_)
+            module = load_module(user_input.strip())
+            install(module.printers, merged_config)
 
 
 def make_driver_dir():
@@ -434,6 +449,27 @@ def copy_set_sample():
             shutil.copy(os.path.join(meipass_path(), bundle_data_folder, set_sample_filename), set_sample_target)
         except OSError:
             pass
+
+
+def copy_config():
+
+    from wpi.env import user_config_dir, user_config_sample_path, user_config_path
+
+    if is_exe():
+        config_sample_path = os.path.join(meipass_path(), bundle_data_folder, 'config_sample.py')
+    else:
+        from wpi import config_sample
+        config_sample_path = config_sample.__file__
+
+    os.makedirs(user_config_dir, exist_ok=True)
+
+    if not os.path.exists(user_config_sample_path) or \
+            open(config_sample_path, 'rb').read() != open(user_config_sample_path, 'rb').read():
+        shutil.copyfile(config_sample_path, user_config_sample_path)
+
+    if not os.path.exists(user_config_path):
+        shutil.copyfile(user_config_sample_path, user_config_path)
+        print('"config.py" not found, copied. you may want to edit {} and rerun this again'.format(user_config_path))
 
 
 if __name__ == '__main__':

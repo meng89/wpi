@@ -1,18 +1,18 @@
 import os
 import sys
-import platform
-import shutil
-
 from wpi import load_module, config_sample, set_sample
 
 
 bundle_data_folder = '_data'
 
-archive_exts = ['.zip', '.7z', '.rar', '.exe']
+Z7_FOLDER = '7z'
+Z7_EXE = '7z.exe'
+Z7_DLL = '7z.dll'
 
-Z7_folder = '7z'
-Z7_exe_filename = '7z.exe'
-Z7_dll_filename = '7z.dll'
+
+user_config_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi')
+user_config_sample_path = os.path.join(user_config_dir, 'config_sample.py')
+user_config_path = os.path.join(user_config_dir, 'config.py')
 
 
 def is_exe():
@@ -24,34 +24,6 @@ def is_exe():
 
 def meipass_path():
     return getattr(sys, '_MEIPASS')
-
-
-def load_config():
-    if is_exe():
-        config_sample_path = os.path.join(meipass_path(), bundle_data_folder, 'config_sample.py')
-    else:
-        config_sample_path = config_sample.__file__
-
-    config_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi')
-    os.makedirs(config_dir, exist_ok=True)
-
-    user_config_sample_path = os.path.join(config_dir, 'config_sample.py')
-    user_config_path = os.path.join(config_dir, 'config.py')
-
-    if not os.path.exists(user_config_sample_path) or \
-            open(config_sample_path, 'rb').read() != open(user_config_sample_path, 'rb').read():
-        shutil.copyfile(config_sample_path, user_config_sample_path)
-
-    if not os.path.exists(user_config_path):
-        shutil.copyfile(user_config_sample_path, user_config_path)
-        print('"config.py" not found, copied. you may want to edit {} and rerun this again'.format(user_config_path))
-
-    return load_module(user_config_path)
-
-
-config = load_config()
-_config_z7_dir = getattr(config, 'z7_dir', None)
-_config_drivers_dir = getattr(config, 'dirvers_dir', None)
 
 
 def app_path():
@@ -83,30 +55,19 @@ def find_7z_in_reg():
 
 
 def path_of_7z():
-    if platform.system() == 'Windows':
-
-        if _config_z7_dir is not None:
-            return _config_drivers_dir
-
-        elif is_exe():
-            return os.path.join(meipass_path(), bundle_data_folder, Z7_exe_filename)
-
-        else:
-            for _7z_path in [os.path.join(one,  Z7_exe_filename) for one in find_7z_in_reg()]:
-                if os.path.isfile(_7z_path):
-                    return _7z_path
-
-        raise FileNotFoundError
+    if is_exe():
+        return os.path.join(meipass_path(), bundle_data_folder, Z7_EXE)
 
     else:
-        return '7z'
+        for _7z_path in [os.path.join(one, Z7_EXE) for one in find_7z_in_reg()]:
+            if os.path.isfile(_7z_path):
+                return _7z_path
+
+    raise FileNotFoundError
 
 
 def drivers_dir():
-    if _config_drivers_dir is not None:
-        return _config_drivers_dir
-
-    elif is_exe():
+    if is_exe():
         return os.path.realpath(os.path.join(app_path(), 'drivers'))
 
     raise FileNotFoundError
@@ -126,7 +87,30 @@ def copy_config_sample():
 
 bundle_files = (
     path_of_7z(),
-    os.path.join(os.path.split(path_of_7z())[0], Z7_dll_filename),
+    os.path.join(os.path.split(path_of_7z())[0], Z7_DLL),
     config_sample.__file__,
     set_sample.__file__,
 )
+
+
+class Config:
+    __slots__ = ['z7_path', 'drivers_dir', 'archive_exts']
+
+    def __init__(self, obj=None):
+        for k in self.__slots__:
+            setattr(self, k, getattr(obj, k, None))
+
+
+def load_conifg(path):
+    return Config(load_module(path))
+
+
+def supply_config(config=None):
+    c = Config(config)
+
+    c.z7_path = c.z7_path or path_of_7z()
+
+    c.archive_exts = c.archive_exts or ['.zip', '.7z', '.rar', '.exe']
+
+    if is_exe():
+        c.drivers_dir = c.drivers_dir or os.path.realpath(os.path.join(app_path(), 'drivers'))

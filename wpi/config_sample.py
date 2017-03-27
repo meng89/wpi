@@ -7,3 +7,6 @@
 
 
 # drivers_dir = r'Z:\printer_drivers'
+
+
+# archive_exts = ['.zip', '.7z', '.rar', '.exe']
