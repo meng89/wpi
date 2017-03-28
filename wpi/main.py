@@ -383,8 +383,6 @@ def main():
 
     os.chdir(tempfile.gettempdir())
 
-    print_head()
-
     if len(sys.argv) > 3:
         raise TypeError
 
@@ -394,11 +392,12 @@ def main():
 
     if len(sys.argv) > 1:
         module = load_module(sys.argv[1])
-        config = Config()
-
+        
         if len(sys.argv) > 2:
             config = load_conifg(sys.argv[2])
-
+        else:
+            config = Config()
+        
         supplied_config = supply_config(config)
 
         install(module.printers, supplied_config)
@@ -414,12 +413,15 @@ def main():
 
             exit()
 
-    if is_exe():
-        make_driver_dir()
-        copy_set_sample()
+        elif is_exe():
+            make_driver_dir()
+            copy_set_sample()
 
     config = load_conifg(user_config_path)
     supplied_config = supply_config(config)
+    
+    print_head()
+        
     while True:
         print('\nPlease input a set of printers, q to quit')
         print('>', end='')
