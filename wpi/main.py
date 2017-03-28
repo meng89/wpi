@@ -161,43 +161,6 @@ def _get_archive_infs_list(driver, must_have, drivers_dir, archive_exts, z7_path
     return legal_archive_infs_list
 
 
-def get_best_archive_infs_list(driver, drivers_dir, archive_exts, z7_path):
-    must_have = {MY_BIT, MY_OS}
-    return _get_archive_infs_list(driver, must_have, drivers_dir, archive_exts, z7_path)
-
-
-def get_compatible_archive_infs_list(driver, drivers_dir, archive_exts, z7_path):
-    must_have = {MY_BIT}
-    return _get_archive_infs_list(driver, must_have, drivers_dir, archive_exts, z7_path)
-
-
-def _get_infs_list(driver, must_have, drivers_dir):
-
-    infs = filter_by_dirs(
-        filter_by_exts(get_all_files(drivers_dir), ['.inf']),
-        must_have,
-        (ALL_BITS | ALL_OS) - must_have,
-        drivers_dir
-    )
-
-    legal_infs = []
-    for inf in infs:
-        if is_match(open(inf, 'rb').read(), driver):
-            legal_infs.append(inf)
-
-    return legal_infs
-
-
-def get_best_infs_list(driver, drivers_dir):
-    must_have = {MY_BIT, MY_OS}
-    return _get_infs_list(driver, must_have, drivers_dir)
-
-
-def get_compatible_infs_list(driver, drivers_dir):
-    must_have = {MY_BIT}
-    return _get_infs_list(driver, must_have, drivers_dir)
-
-
 class PortInstallError(Exception):
     pass
 
@@ -278,7 +241,10 @@ def install_driver(des_driver, sc):
     tempdir = tempfile.mkdtemp()
 
     if des_driver.inf_path:
-        inf_path = des_driver.inf_path
+        if os.path.isabs(des_driver.inf_path):
+            inf_path = des_driver.inf_path
+        else:
+            inf_path = os.path.join(sc.drivers_dir, des_driver.inf_path)
 
     elif des_driver.archive:
         if des_driver.inf_in_archive:
@@ -287,7 +253,13 @@ def install_driver(des_driver, sc):
             infs = get_legal_infs_list(des_driver.archive, des_driver.name, sc.z7_path)
             iia = infs[0]
 
-        archivelib.extract_all(des_driver.archive, tempdir, sc.z7_path)
+        if os.path.isabs(des_driver.archive):
+            archive = des_driver.archive
+        else:
+            archive = os.path.join(sc.drivers_dir, des_driver.archive)
+
+        archivelib.extract_all(archive, tempdir, sc.z7_path)
+
         inf_path = os.path.join(tempdir, iia)
 
     else:
@@ -295,26 +267,19 @@ def install_driver(des_driver, sc):
         iia = None
 
         inf_path_ = None
-        best_archive_infs = get_best_archive_infs_list(des_driver.name, sc.drivers_dir, sc.archive_exts, sc.z7_path)
+        best_archive_infs = _get_archive_infs_list(des_driver.name, {MY_BIT, MY_OS}, sc.drivers_dir,
+                                                   sc.archive_exts, sc.z7_path)
+
         if best_archive_infs:
             archive = best_archive_infs[0][0]
             iia = best_archive_infs[0][1][0]
 
         else:
-            best_infs = get_best_infs_list(des_driver.name, sc.drivers_dir)
-            if best_infs:
-                inf_path_ = best_infs[0]
-
-            else:
-                compatible_archive_infs = get_compatible_archive_infs_list(des_driver.name, sc.drivers_dir, sc.archive_exts, sc.z7_path)
-                if compatible_archive_infs:
-                    archive = best_archive_infs[0][0]
-                    iia = best_archive_infs[0][1][0]
-
-                else:
-                    compatible_infs = get_compatible_infs_list(des_driver.name, sc.drivers_dir)
-                    if compatible_infs:
-                        inf_path_ = compatible_infs[0]
+            compatible_archive_infs = _get_archive_infs_list(des_driver.name, {MY_BIT}, sc.drivers_dir,
+                                                             sc.archive_exts, sc.z7_path)
+            if compatible_archive_infs:
+                archive = best_archive_infs[0][0]
+                iia = best_archive_infs[0][1][0]
 
         if archive and iia:
             archivelib.extract_all(archive, tempdir, sc.z7_path)
