@@ -6,10 +6,9 @@ import shutil
 
 import chardet
 
-from wpi import load_module, archivelib, ALL_BITS, ALL_OS, MY_BIT, MY_OS, version
+from wpi import load_module, archivelib, version
 
-from wpi.env import is_exe, app_path, meipass_path, bundle_data_folder
-
+from wpi.env import is_exe, app_path, meipass_path, bundle_data_folder, ALL_BITS, CUR_BIT, CUR_OS, ALL_OS
 
 supplied_config = None
 
@@ -265,9 +264,9 @@ def install_driver(des_driver, sc):
     else:
         archive = None
         iia = None
-
         inf_path_ = None
-        best_archive_infs = _get_archive_infs_list(des_driver.name, {MY_BIT, MY_OS}, sc.drivers_dir,
+
+        best_archive_infs = _get_archive_infs_list(des_driver.name, {CUR_BIT, CUR_OS}, sc.drivers_dir,
                                                    sc.archive_exts, sc.z7_path)
 
         if best_archive_infs:
@@ -275,7 +274,7 @@ def install_driver(des_driver, sc):
             iia = best_archive_infs[0][1][0]
 
         else:
-            compatible_archive_infs = _get_archive_infs_list(des_driver.name, {MY_BIT}, sc.drivers_dir,
+            compatible_archive_infs = _get_archive_infs_list(des_driver.name, {CUR_BIT}, sc.drivers_dir,
                                                              sc.archive_exts, sc.z7_path)
             if compatible_archive_infs:
                 archive = best_archive_infs[0][0]
@@ -356,7 +355,7 @@ def main():
         exit()
 
     if len(sys.argv) > 1:
-        module = load_module(sys.argv[1])
+        module_ = load_module(sys.argv[1])
         
         if len(sys.argv) > 2:
             config = load_conifg(sys.argv[2])
@@ -365,7 +364,7 @@ def main():
         
         supplied_config = supply_config(config)
 
-        install(module.printers, supplied_config)
+        install(module_.printers, supplied_config)
 
         exit()
 
@@ -373,8 +372,8 @@ def main():
         module_file = os.path.join(app_path(), '_.py')
         config = load_conifg(user_config_path)
         if os.path.exists(module_file):
-            module = load_module(module_file.strip())
-            install(module.printers, config)
+            module_ = load_module(module_file.strip())
+            install(module_.printers, config)
 
             exit()
 
@@ -384,11 +383,12 @@ def main():
 
     config = load_conifg(user_config_path)
     supplied_config = supply_config(config)
-    
+
+    os.system('cls')
     print_head()
         
     while True:
-        print('\nPlease input a set of printers, q to quit')
+        print('\nPlease input a set of printers, q to quit.')
         print('>', end='')
 
         user_input = input()
@@ -397,12 +397,11 @@ def main():
             break
 
         elif user_input.strip().lower().endswith('.py'):
-            module = load_module(user_input.strip())
-            install(module.printers, supplied_config)
+            module_ = load_module(user_input.strip())
+            install(module_.printers, supplied_config)
 
 
 def make_driver_dir():
-    from wpi import ALL_BITS, ALL_OS
     for bit in ALL_BITS:
         for os_ in ALL_OS:
             try:

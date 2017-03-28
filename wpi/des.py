@@ -38,8 +38,8 @@ class LPRPort(TCPIPPort):
 
 
 class SMBPort(LocalPort):
-    def __init__(self, name, value=None):
-        super().__init__(value)
+    def __init__(self, name):
+        super().__init__(None)
         self.name = name
 
 

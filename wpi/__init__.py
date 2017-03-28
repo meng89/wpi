@@ -1,7 +1,5 @@
 import importlib.util
 import os
-import platform
-
 
 _modules = {}
 
@@ -37,9 +35,3 @@ def load_module(pypath, my_file=None):
         return _modules[abs_path]
 
 
-ALL_BITS = {'32bit', '64bit'}
-
-MY_BIT = platform.architecture()[0]
-MY_OS = platform.system().lower()[0:3] + platform.release().lower()
-
-ALL_OS = {'winxp', 'win7', 'win10'} | {MY_OS}
