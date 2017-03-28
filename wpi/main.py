@@ -11,6 +11,9 @@ from wpi import load_module, archivelib, ALL_BITS, ALL_OS, MY_BIT, MY_OS, versio
 from wpi.env import is_exe, app_path, meipass_path, bundle_data_folder
 
 
+supplied_config = None
+
+
 def split_all(path):
     names = []
     while True:
@@ -73,14 +76,14 @@ def match_infs(inf_files, driver):
     return legal_files
 
 
-def get_legal_archive_infs_list(best_archives, driver):
+def get_legal_archive_infs_list(best_archives, driver, z7_path):
     legal_archives = []
     for archive in best_archives:
 
         legal_infs = []
-        for name in archivelib.list_names(archive, path_of_7z()):
+        for name in archivelib.list_names(archive, z7_path):
             if os.path.splitext(name)[1].lower() == '.inf':
-                inf_bytes = archivelib.read(archive, name, path_of_7z())
+                inf_bytes = archivelib.read(archive, name, z7_path)
                 if is_match(inf_bytes, driver):
                     legal_infs.append(name)
 
@@ -90,11 +93,11 @@ def get_legal_archive_infs_list(best_archives, driver):
     return legal_archives
 
 
-def get_legal_infs_list(archive, driver):
+def get_legal_infs_list(archive, driver, z7_path):
     legal_infs = []
-    for name in archivelib.list_names(archive, path_of_7z()):
+    for name in archivelib.list_names(archive, z7_path):
         if os.path.splitext(name)[1].lower() == '.inf':
-            inf_bytes = archivelib.read(archive, name, path_of_7z())
+            inf_bytes = archivelib.read(archive, name, z7_path)
             if is_match(inf_bytes, driver):
                 legal_infs.append(name)
     return legal_infs
@@ -113,15 +116,15 @@ def filter_by_exts(files, exts, case_sensitive=False):
     return new_files
 
 
-def filter_by_isarchive(files):
-    files = [file for file in files if archivelib.is_can_handle(file, path_of_7z())]
+def filter_by_isarchive(files, z7_path):
+    files = [file for file in files if archivelib.is_can_handle(file, z7_path)]
     return files
 
 
-def filter_by_dirs(files, must_have, must_have_no):
+def filter_by_dirs(files, must_have, must_have_no, drivers_dir):
     new_files = []
 
-    delete_root = drivers_dir()
+    delete_root = drivers_dir
 
     for path in files:
         if not path.startswith(delete_root):
@@ -136,42 +139,45 @@ def filter_by_dirs(files, must_have, must_have_no):
     return new_files
 
 
-def _get_archive_infs_list(driver, must_have):
+def _get_archive_infs_list(driver, must_have, drivers_dir, archive_exts, z7_path):
 
     archives = filter_by_isarchive(
                 filter_by_dirs(
-                    filter_by_exts(get_all_files(drivers_dir()), archive_exts),
+                    filter_by_exts(get_all_files(drivers_dir), archive_exts),
                     must_have,
-                    (ALL_BITS | ALL_OS) - must_have
-                )
+                    (ALL_BITS | ALL_OS) - must_have,
+                    drivers_dir
+                ),
+                z7_path
             )
 
     legal_archive_infs_list = []
 
     for archive in archives:
-        legal_infs = get_legal_infs_list(archive, driver)
+        legal_infs = get_legal_infs_list(archive, driver, z7_path)
         if legal_infs:
             legal_archive_infs_list.append([archive, legal_infs])
 
     return legal_archive_infs_list
 
 
-def get_best_archive_infs_list(driver):
+def get_best_archive_infs_list(driver, drivers_dir, archive_exts, z7_path):
     must_have = {MY_BIT, MY_OS}
-    return _get_archive_infs_list(driver, must_have)
+    return _get_archive_infs_list(driver, must_have, drivers_dir, archive_exts, z7_path)
 
 
-def get_compatible_archive_infs_list(driver):
+def get_compatible_archive_infs_list(driver, drivers_dir, archive_exts, z7_path):
     must_have = {MY_BIT}
-    return _get_archive_infs_list(driver, must_have)
+    return _get_archive_infs_list(driver, must_have, drivers_dir, archive_exts, z7_path)
 
 
-def _get_infs_list(driver, must_have):
+def _get_infs_list(driver, must_have, drivers_dir):
 
     infs = filter_by_dirs(
-               filter_by_exts(get_all_files(drivers_dir()), ['.inf']),
-               must_have,
-               (ALL_BITS | ALL_OS) - must_have
+        filter_by_exts(get_all_files(drivers_dir), ['.inf']),
+        must_have,
+        (ALL_BITS | ALL_OS) - must_have,
+        drivers_dir
     )
 
     legal_infs = []
@@ -182,14 +188,14 @@ def _get_infs_list(driver, must_have):
     return legal_infs
 
 
-def get_best_infs_list(driver):
+def get_best_infs_list(driver, drivers_dir):
     must_have = {MY_BIT, MY_OS}
-    return _get_infs_list(driver, must_have)
+    return _get_infs_list(driver, must_have, drivers_dir)
 
 
-def get_compatible_infs_list(driver):
+def get_compatible_infs_list(driver, drivers_dir):
     must_have = {MY_BIT}
-    return _get_infs_list(driver, must_have)
+    return _get_infs_list(driver, must_have, drivers_dir)
 
 
 class PortInstallError(Exception):
@@ -260,7 +266,7 @@ def install_port(des_port, del_printer_if_necessary=True):
         install_it()
 
 
-def install_driver(des_driver, config):
+def install_driver(des_driver, sc):
     import tempfile
     import shutil
 
@@ -278,10 +284,10 @@ def install_driver(des_driver, config):
         if des_driver.inf_in_archive:
             iia = des_driver.inf_in_archive
         else:
-            infs = get_legal_infs_list(des_driver.archive, des_driver.name)
+            infs = get_legal_infs_list(des_driver.archive, des_driver.name, sc.z7_path)
             iia = infs[0]
 
-        archivelib.extract_all(des_driver.archive, tempdir, config.z7_path)
+        archivelib.extract_all(des_driver.archive, tempdir, sc.z7_path)
         inf_path = os.path.join(tempdir, iia)
 
     else:
@@ -289,31 +295,29 @@ def install_driver(des_driver, config):
         iia = None
 
         inf_path_ = None
-        best_archive_infs = get_best_archive_infs_list(driver=des_driver.name)
+        best_archive_infs = get_best_archive_infs_list(des_driver.name, sc.drivers_dir, sc.archive_exts, sc.z7_path)
         if best_archive_infs:
             archive = best_archive_infs[0][0]
             iia = best_archive_infs[0][1][0]
-            # archivelib.extract_all(best_archive_infs[0][0], tempdir, path_of_7z())
-            # inf_path = os.path.join(tempdir, best_archive_infs[0][1][0])
 
         else:
-            best_infs = get_best_infs_list(des_driver.name)
+            best_infs = get_best_infs_list(des_driver.name, sc.drivers_dir)
             if best_infs:
                 inf_path_ = best_infs[0]
 
             else:
-                compatible_archive_infs = get_compatible_archive_infs_list(des_driver.name)
+                compatible_archive_infs = get_compatible_archive_infs_list(des_driver.name, sc.drivers_dir, sc.archive_exts, sc.z7_path)
                 if compatible_archive_infs:
                     archive = best_archive_infs[0][0]
                     iia = best_archive_infs[0][1][0]
 
                 else:
-                    compatible_infs = get_compatible_infs_list(des_driver.name)
+                    compatible_infs = get_compatible_infs_list(des_driver.name, sc.drivers_dir)
                     if compatible_infs:
                         inf_path_ = compatible_infs[0]
 
         if archive and iia:
-            archivelib.extract_all(archive, tempdir, config.z7_path)
+            archivelib.extract_all(archive, tempdir, sc.z7_path)
             inf_path = os.path.join(tempdir, iia)
         elif inf_path_:
             inf_path = inf_path_
@@ -330,14 +334,14 @@ def install_driver(des_driver, config):
         pass
 
 
-def install(printers, config):
+def install(printers, sc):
     from wpi.printer import Printers
 
     for p in printers:
 
         try:
             print('try install driver')
-            install_driver(p.driver)
+            install_driver(p.driver, sc)
             print('try install port')
             install_port(p.port)
 
@@ -375,6 +379,8 @@ def main():
     import tempfile
     from wpi.env import load_conifg, Config, supply_config, user_config_path
 
+    global supplied_config
+
     os.chdir(tempfile.gettempdir())
 
     print_head()
@@ -393,9 +399,9 @@ def main():
         if len(sys.argv) > 2:
             config = load_conifg(sys.argv[2])
 
-        merged_config = supply_config(config)
+        supplied_config = supply_config(config)
 
-        install(module.printers, merged_config)
+        install(module.printers, supplied_config)
 
         exit()
 
@@ -413,7 +419,7 @@ def main():
         copy_set_sample()
 
     config = load_conifg(user_config_path)
-    merged_config = supply_config(config)
+    supplied_config = supply_config(config)
     while True:
         print('\nPlease input a set of printers, q to quit')
         print('>', end='')
@@ -425,7 +431,7 @@ def main():
 
         elif user_input.strip().lower().endswith('.py'):
             module = load_module(user_input.strip())
-            install(module.printers, merged_config)
+            install(module.printers, supplied_config)
 
 
 def make_driver_dir():
