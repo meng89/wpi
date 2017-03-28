@@ -3,8 +3,10 @@ Windows Printer Installer
 
 WPI 是一个使用 Python 3 编写的安装非本地打印机 （包括驱动，端口） 的工具。
 
+
 安装
-==
+===
+
 
 先安装 Python 3 (建议选择 32bit 的 3.4 版) 及 pip 组件
 然后手动下载安装 `pywin32 <https://sourceforge.net/projects/pywin32/files/pywin32/>`_
