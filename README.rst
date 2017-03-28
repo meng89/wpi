@@ -35,7 +35,7 @@ wpi 怎么用？
 
    wpi2exe
 
-这样会生成单一的 exe 文件， wpi2exe 使用 %LOCALAPPDATA%\wpi2exe\config.py 作为配置脚本，如果不存在，wpi2exe 会自动创建它。
+这样会生成单一的 exe 文件， wpi2exe 使用 %LOCALAPPDATA%\\wpi2exe\\config.py 作为配置脚本，如果不存在，wpi2exe 会自动创建它。
 可以编辑它以设置输出目录等。正如后缀名所示，此配置文件是一个 Python 脚本文件。
 
 现在我们可以运行 wpi.exe 了， 举例：
@@ -43,7 +43,7 @@ wpi 怎么用？
 
     wpi.exe D:\my_set.py D:\wpi_config.py
 
-只有两个可选参数： 第一个参数是定义了打印机集合的脚本，第二个是配置脚本。 默认的配置脚本位置是 %LOCALAPPDATA%\wpi\config.py。
+只有两个可选参数： 第一个参数是定义了打印机集合的脚本，第二个是配置脚本。 默认的配置脚本位置是 %LOCALAPPDATA%\\wpi\\config.py。
 如果像例子中的命令这样以第二个参数指定了配置文件，默认配置文件则会被忽略。只有当以一个参数的方式运行 wpi.exe 时（既没有指定配置脚本），wpi.exe 才会使用默认的配置脚本。
 
 
