@@ -154,6 +154,7 @@ def _get_archive_infs_list(driver, must_have, drivers_dir, archive_exts, z7_path
 
     for archive in archives:
         legal_infs = get_legal_infs_list(archive, driver, z7_path)
+
         if legal_infs:
             legal_archive_infs_list.append([archive, legal_infs])
 
