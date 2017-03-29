@@ -67,9 +67,9 @@ def ep(address, driver, name=None, protocol=None, ipport=None, archive=None, inf
         port = SMBPort(address)
 
     else:
-        if protocol == 'raw':
+        if protocol == RAW:
             port = RAWPort(address, ipport)
-        elif protocol == 'lpr':
+        elif protocol == LPR:
             port = LPRPort(address, ipport)
 
         elif protocol is None:

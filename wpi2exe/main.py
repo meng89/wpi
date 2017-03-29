@@ -113,19 +113,24 @@ def main():
     upx_dir = getattr(config, 'upx_dir', None)
 
     output_dir = getattr(config, 'output_dir', None) or os.path.expanduser('~')
+
     output_filename = getattr(config, 'output_filename', None) or 'wpi'
 
-    build(
-        script=os.path.join(wpi.main.__file__),
-        distpath=output_dir,
-        name=output_filename,
-        upx_dir=upx_dir,
-        binarys=[(path, wpi.env.bundle_data_folder) for path in wpi.env.bundle_files]
-    )
+    def do_build(console_, output_filename_):
+        build(
+            script=os.path.join(wpi.main.__file__),
+            distpath=output_dir,
+            name=output_filename_,
+            console=console_,
+            upx_dir=upx_dir,
+            binarys=[(path, wpi.env.bundle_data_folder) for path in wpi.env.bundle_files]
+        )
 
-    if verpatch_path is not None:
-        run_verpatch(verpatch_path=verpatch_path, exe_path=os.path.join(output_dir, output_filename + '.exe'))
+        if verpatch_path is not None:
+            run_verpatch(verpatch_path=verpatch_path, exe_path=os.path.join(output_dir, output_filename_ + '.exe'))
 
+    do_build(True, output_filename)
+    do_build(False, output_filename + '_nw')
 
 if __name__ == '__main__':
     main()

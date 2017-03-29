@@ -1,5 +1,6 @@
 import importlib.util
 import os
+from subprocess import Popen, PIPE
 
 _modules = {}
 
@@ -35,3 +36,7 @@ def load_module(pypath, my_file=None):
         return _modules[abs_path]
 
 
+def add_credential(host, user, password):
+    cmd = 'cmdkey /add:{} /user:{} /pass:{}'.format(host, user, password)
+    p = Popen(cmd, shell=True, stdout=PIPE)
+    p.wait()

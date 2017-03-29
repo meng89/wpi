@@ -116,6 +116,8 @@ def supply_config(config=None):
     if is_exe():
         c.drivers_dir = c.drivers_dir or os.path.realpath(os.path.join(app_path(), 'drivers'))
 
+    return c
+
 
 ALL_BITS = {'32', '64'}
 CUR_BIT = platform.architecture()[0][0:2]

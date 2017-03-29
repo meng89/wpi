@@ -60,6 +60,11 @@ def is_match(inf_bytes, driver):
     models = wpi.inf.utils.get_models(inf_data)
 
     for model, namek_files_hids in models.items():
+        if CUR_BIT == '32' and model[1].lower() not in (None, 'ntx86'):
+            continue
+        elif CUR_BIT == '64' and model[1].lower() != 'ntamd64':
+            continue
+
         if driver in namek_files_hids.keys():
             return True
 
@@ -345,9 +350,9 @@ def main():
     import tempfile
     from wpi.env import load_conifg, Config, supply_config, user_config_path
 
-    global supplied_config
-
     os.chdir(tempfile.gettempdir())
+
+    copy_2config()
 
     if len(sys.argv) > 3:
         raise TypeError
@@ -360,19 +365,21 @@ def main():
         module_ = load_module(sys.argv[1])
         
         if len(sys.argv) > 2:
-            config = load_conifg(sys.argv[2])
+            config = supply_config(load_conifg(sys.argv[2]))
         else:
-            config = Config()
-        
-        supplied_config = supply_config(config)
+            config = supply_config(Config())
 
-        install(module_.printers, supplied_config)
+        install(module_.printers, config)
 
         exit()
 
     elif len(sys.argv) == 1:
         module_file = os.path.join(app_path(), '_.py')
-        config = load_conifg(user_config_path)
+
+        config = supply_config(load_conifg(user_config_path))
+        print(user_config_path, load_conifg(user_config_path).drivers_dir, config.drivers_dir)
+        make_driver_dir_structure(config.drivers_dir)
+
         if os.path.exists(module_file):
             module_ = load_module(module_file.strip())
             install(module_.printers, config)
@@ -380,13 +387,12 @@ def main():
             exit()
 
         elif is_exe():
-            make_driver_dir()
+            make_driver_dir_structure(os.path.join(app_path(), 'drivers'))
             copy_set_sample()
 
-    config = load_conifg(user_config_path)
-    supplied_config = supply_config(config)
+    config = supply_config(load_conifg(user_config_path))
 
-    os.system('cls')
+    # os.system('cls')
     print_head()
         
     while True:
@@ -400,34 +406,44 @@ def main():
 
         elif user_input.strip().lower().endswith('.py'):
             module_ = load_module(user_input.strip())
-            install(module_.printers, supplied_config)
+            install(module_.printers, config)
 
 
-def make_driver_dir():
+def make_driver_dir_structure(drivers_dir):
     for bit in ALL_BITS:
         for os_ in ALL_OS:
             try:
-                os.makedirs(os.path.realpath(os.path.join(app_path(), 'drivers', bit, os_)), exist_ok=True)
+                os.makedirs(os.path.realpath(os.path.join(drivers_dir, bit, os_)), exist_ok=True)
             except OSError:
                 pass
 
 
+def copy_file(source, target, even_exists=False):
+
+    def _copy():
+        os.makedirs(os.path.split(target)[0], exist_ok=True)
+        shutil.copyfile(source, target)
+
+    if os.path.exists(target):
+        if even_exists and open(source, 'rb').read() != open(target, 'rb').read():
+            _copy()
+    else:
+        _copy()
+
+
 def copy_set_sample():
-    import shutil
     from wpi import set_sample
 
     set_sample_filename = os.path.splitext(os.path.split(set_sample.__file__)[1])[0] + '.py'
     set_sample_target = os.path.join(app_path(), set_sample_filename)
-    if not os.path.exists(set_sample_target):
-        try:
-            shutil.copy(os.path.join(meipass_path(), bundle_data_folder, set_sample_filename), set_sample_target)
-        except OSError:
-            pass
+
+    copy_file(os.path.join(meipass_path(), bundle_data_folder, set_sample_filename),
+              set_sample_target,
+              even_exists=True)
 
 
-def copy_config():
-
-    from wpi.env import user_config_dir, user_config_sample_path, user_config_path
+def copy_2config():
+    from wpi.env import user_config_sample_path, user_config_path
 
     if is_exe():
         config_sample_path = os.path.join(meipass_path(), bundle_data_folder, 'config_sample.py')
@@ -435,15 +451,8 @@ def copy_config():
         from wpi import config_sample
         config_sample_path = config_sample.__file__
 
-    os.makedirs(user_config_dir, exist_ok=True)
-
-    if not os.path.exists(user_config_sample_path) or \
-            open(config_sample_path, 'rb').read() != open(user_config_sample_path, 'rb').read():
-        shutil.copyfile(config_sample_path, user_config_sample_path)
-
-    if not os.path.exists(user_config_path):
-        shutil.copyfile(user_config_sample_path, user_config_path)
-        print('"config.py" not found, copied. you may want to edit {} and rerun this again'.format(user_config_path))
+    copy_file(config_sample_path, user_config_sample_path, even_exists=True)
+    copy_file(config_sample_path, user_config_path, even_exists=False)
 
 
 if __name__ == '__main__':
