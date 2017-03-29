@@ -348,7 +348,7 @@ def print_head():
 
 def main():
     import tempfile
-    from wpi.env import load_conifg, Config, supply_config, user_config_path
+    from wpi.env import load_config, Config, supply_config, user_config_path
 
     os.chdir(tempfile.gettempdir())
 
@@ -365,7 +365,7 @@ def main():
         module_ = load_module(sys.argv[1])
         
         if len(sys.argv) > 2:
-            config = supply_config(load_conifg(sys.argv[2]))
+            config = supply_config(load_config(sys.argv[2]))
         else:
             config = supply_config(Config())
 
@@ -376,9 +376,10 @@ def main():
     elif len(sys.argv) == 1:
         module_file = os.path.join(app_path(), '_.py')
 
-        config = supply_config(load_conifg(user_config_path))
-        print(user_config_path, load_conifg(user_config_path).drivers_dir, config.drivers_dir)
-        make_driver_dir_structure(config.drivers_dir)
+        config = supply_config(load_config(user_config_path))
+
+        if config.drivers_dir:
+            make_driver_dir_structure(config.drivers_dir)
 
         if os.path.exists(module_file):
             module_ = load_module(module_file.strip())
@@ -390,23 +391,21 @@ def main():
             make_driver_dir_structure(os.path.join(app_path(), 'drivers'))
             copy_set_sample()
 
-    config = supply_config(load_conifg(user_config_path))
+        os.system('cls')
+        print_head()
 
-    # os.system('cls')
-    print_head()
-        
-    while True:
-        print('\nPlease input a set of printers, q to quit.')
-        print('>', end='')
+        while True:
+            print('\nPlease input a set of printers, q to quit.')
+            print('>', end='')
 
-        user_input = input()
+            user_input = input()
 
-        if user_input.strip().lower() in ('q', 'quit', 'e', 'exit'):
-            break
+            if user_input.strip().lower() in ('q', 'quit', 'e', 'exit'):
+                break
 
-        elif user_input.strip().lower().endswith('.py'):
-            module_ = load_module(user_input.strip())
-            install(module_.printers, config)
+            elif user_input.strip().lower().endswith('.py'):
+                module_ = load_module(user_input.strip())
+                install(module_.printers, config)
 
 
 def make_driver_dir_structure(drivers_dir):

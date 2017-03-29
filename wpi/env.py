@@ -102,7 +102,7 @@ class Config:
             setattr(self, k, getattr(obj, k, None))
 
 
-def load_conifg(path):
+def load_config(path):
     return Config(load_module(path))
 
 
