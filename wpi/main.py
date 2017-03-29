@@ -8,6 +8,8 @@ import chardet
 
 from wpi import load_module, archivelib, version
 
+import wpi.inf
+
 from wpi.env import is_exe, app_path, meipass_path, bundle_data_folder, ALL_BITS, CUR_BIT, CUR_OS, ALL_OS
 
 supplied_config = None
@@ -53,7 +55,6 @@ def get_all_files(d):
 
 
 def is_match(inf_bytes, driver):
-    import wpi.inf
 
     inf_data = wpi.inf.loads.loads(inf_bytes.decode(chardet.detect(inf_bytes)['encoding']))
     models = wpi.inf.clean.get_models(inf_data)

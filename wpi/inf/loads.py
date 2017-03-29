@@ -212,15 +212,6 @@ def _read_entry(line):
                 else:
                     v = normal_v
 
-    # if is_rv_is_list:
-    #    return lv, rv_list
-
-    # elif is_lr:
-    #    return lv, rv
-
-    # else:
-    #    return v
-
     if is_lr:
         return (lv_list or lv), (rv_list or rv)
 
