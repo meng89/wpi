@@ -57,7 +57,7 @@ def get_all_files(d):
 def is_match(inf_bytes, driver):
 
     inf_data = wpi.inf.loads.loads(inf_bytes.decode(chardet.detect(inf_bytes)['encoding']))
-    models = wpi.inf.clean.get_models(inf_data)
+    models = wpi.inf.utils.get_models(inf_data)
 
     for model, namek_files_hids in models.items():
         if driver in namek_files_hids.keys():

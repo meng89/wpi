@@ -1,6 +1,6 @@
 from . import loads
-from . import clean
+from . import utils
 
 
 def loads_and_clean(file, platform=None):
-    return clean.clean(loads.loads(file), platform)
+    return utils.clean(loads.loads(file), platform)

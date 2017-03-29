@@ -1,4 +1,3 @@
-from pprint import pprint
 
 
 def is_token(string):

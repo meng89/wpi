@@ -108,7 +108,6 @@ def _normal_handle(chars):
 
 
 def _read_entry(line):
-    original_line = line
 
     line = line.strip()
 
