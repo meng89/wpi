@@ -1,7 +1,7 @@
 import os
 import platform
 import sys
-from wpi import load_module, config_sample, set_sample
+from wpi import load_module, config_sample, ps_sample
 
 
 bundle_data_folder = '_data'
@@ -10,10 +10,18 @@ Z7_FOLDER = '7z'
 Z7_EXE = '7z.exe'
 Z7_DLL = '7z.dll'
 
+config_sample_filename = 'config_sample.py'
+config_filename = 'config.py'
+
+ps_sample_filename = os.path.splitext(os.path.split(ps_sample.__file__)[1])[0] + '.py'
+
+def_ps_filename = '_.py'
+
+def_drivers_dirname = 'drivers'
 
 user_config_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi')
 user_config_sample_path = os.path.join(user_config_dir, 'config_sample.py')
-user_config_path = os.path.join(user_config_dir, 'config.py')
+user_config_path = os.path.join(user_config_dir, config_filename)
 
 
 def is_exe():
@@ -28,10 +36,14 @@ def meipass_path():
 
 
 def app_path():
-    if getattr(sys, 'frozen', False):
+    if is_exe():
         return os.path.dirname(sys.executable)
     elif __file__:
         return os.path.dirname(__file__)
+
+
+def app_dir():
+    return os.path.split(app_path())[0]
 
 
 def find_7z_in_reg():
@@ -76,8 +88,8 @@ def drivers_dir():
 
 def copy_config_sample():
     import shutil
-    from wpi import set_sample
-    set_sample_filename = os.path.splitext(os.path.split(set_sample.__file__)[1])[0] + '.py'
+    from wpi import ps_sample
+    set_sample_filename = os.path.splitext(os.path.split(ps_sample.__file__)[1])[0] + '.py'
     set_sample_target = os.path.join(app_path(), set_sample_filename)
     if not os.path.exists(set_sample_target):
         try:
@@ -90,7 +102,7 @@ bundle_files = (
     path_of_7z(),
     os.path.join(os.path.split(path_of_7z())[0], Z7_DLL),
     config_sample.__file__,
-    set_sample.__file__,
+    ps_sample.__file__,
 )
 
 
@@ -112,9 +124,6 @@ def supply_config(config=None):
     c.z7_path = c.z7_path or path_of_7z()
 
     c.archive_exts = c.archive_exts or ['.zip', '.7z', '.rar', '.exe']
-
-    if is_exe():
-        c.drivers_dir = c.drivers_dir or os.path.realpath(os.path.join(app_path(), 'drivers'))
 
     return c
 

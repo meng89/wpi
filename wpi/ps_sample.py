@@ -51,4 +51,4 @@ pd1 = ep('172.17.0.11', 'HP LaserJet 1020n', name='hp 1020n 5', protocol=LPR)
 
 
 # 打印机集合文件里需要有一个名为 'printers' 的对象。
-printers = (pa1, pa2, pb1, pb2, pc1, pc2, pd1)
+printers = [pa1, pa2, pb1, pb2, pc1, pc2, pd1]

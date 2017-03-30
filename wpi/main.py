@@ -10,7 +10,9 @@ from wpi import load_module, archivelib, version
 
 import wpi.inf
 
-from wpi.env import is_exe, app_path, meipass_path, bundle_data_folder, ALL_BITS, CUR_BIT, CUR_OS, ALL_OS
+from wpi.env import is_exe, app_dir, meipass_path, bundle_data_folder, ALL_BITS, CUR_BIT, CUR_OS, ALL_OS,\
+    config_sample_filename, config_filename, ps_sample_filename, def_ps_filename, def_drivers_dirname
+
 
 supplied_config = None
 
@@ -347,65 +349,97 @@ def print_head():
 
 
 def main():
+    # if not ctypes.windll.shell32.IsUserAnAdmin():
+    #     print('Not run as Administrator!')
+    #     exit()
+
+    args = list()
+    kwargs = dict()
+
+    for _ in sys.argv[1:]:
+        p_a = _.split('=', 1)
+        if len(p_a) == 1:
+            args.append(_)
+        else:
+            kwargs[p_a[0]] = p_a[1]
+
+    if is_exe():
+        exe_main(*args, **kwargs)
+    else:
+        script_main(*args, **kwargs)
+
+
+def exe_main(ps=None, config=None):
+
     import tempfile
-    from wpi.env import load_config, Config, supply_config, user_config_path
+    from wpi.env import load_config, Config, supply_config
+
+    if ps is not None:
+        module_ = load_module(ps)
+    elif os.path.exists(os.path.join(app_dir(), def_ps_filename)):
+        module_ = load_config(os.path.join(app_dir(), def_ps_filename))
+    else:
+        module_ = None
+
+    if config:
+        sc = supply_config(load_config(config))
+    elif os.path.exists(os.path.join(app_dir(), config_filename)):
+        sc = supply_config(load_config(os.path.join(app_dir(), config_filename)))
+    else:
+        sc = supply_config(Config())
 
     os.chdir(tempfile.gettempdir())
 
-    copy_2config()
-
-    if len(sys.argv) > 3:
-        raise TypeError
-
-    if not ctypes.windll.shell32.IsUserAnAdmin():
-        print('Not run as Administrator!')
+    if module_ is not None:
+        install(module_.printers, sc)
         exit()
 
-    if len(sys.argv) > 1:
-        module_ = load_module(sys.argv[1])
-        
-        if len(sys.argv) > 2:
-            config = supply_config(load_config(sys.argv[2]))
-        else:
-            config = supply_config(Config())
+    if sc.drivers_dir is None:
+        sc.drivers_dir = os.path.join(app_dir(), def_drivers_dirname)
 
-        install(module_.printers, config)
+    interactive_loop(sc, app_dir())
 
-        exit()
 
-    elif len(sys.argv) == 1:
-        module_file = os.path.join(app_path(), '_.py')
+def script_main():
+    pass
 
-        config = supply_config(load_config(user_config_path))
 
-        if config.drivers_dir:
-            make_driver_dir_structure(config.drivers_dir)
+def interactive_loop(sc, m_target_dir):
+    os.system('cls')
+    print_head()
+    while True:
+        print('m to make default sample config, sample ps and drivers structure... \n',
+              'q to quit.\n',
+              'or input a module path wtch printers', end='')
+        print('>', end='')
 
-        if os.path.exists(module_file):
-            module_ = load_module(module_file.strip())
-            install(module_.printers, config)
+        user_input = input()
 
-            exit()
+        if user_input.strip().lower() == 'm':
+            _m_cmd(m_target_dir)
 
-        elif is_exe():
-            make_driver_dir_structure(os.path.join(app_path(), 'drivers'))
-            copy_set_sample()
+        elif user_input.strip().lower() in ('q', 'quit', 'e', 'exit'):
+            break
 
-        os.system('cls')
-        print_head()
+        elif user_input.strip().lower().endswith('.py'):
+            module_ = load_module(user_input.strip())
+            install(module_.printers, sc)
 
-        while True:
-            print('\nPlease input a set of printers, q to quit.')
-            print('>', end='')
 
-            user_input = input()
+def _m_cmd(target_dir):
 
-            if user_input.strip().lower() in ('q', 'quit', 'e', 'exit'):
-                break
+    target_config_sample_path = os.path.join(target_dir, config_sample_filename)
+    target_config_path = os.path.join(target_dir, config_filename)
 
-            elif user_input.strip().lower().endswith('.py'):
-                module_ = load_module(user_input.strip())
-                install(module_.printers, config)
+    copy_file(original_config_sample_path(), target_config_sample_path, even_exists=True)
+    copy_file(original_config_sample_path(), target_config_path, even_exists=False)
+
+    target_ps_sample = os.path.join(target_dir, ps_sample_filename)
+
+    copy_file(original_ps_sample_path, target_ps_sample, even_exists=True)
+
+    target_drivers_dir = os.path.join(target_dir, def_drivers_dirname)
+    make_driver_dir_structure(target_drivers_dir)
 
 
 def make_driver_dir_structure(drivers_dir):
@@ -430,28 +464,20 @@ def copy_file(source, target, even_exists=False):
         _copy()
 
 
-def copy_set_sample():
-    from wpi import set_sample
-
-    set_sample_filename = os.path.splitext(os.path.split(set_sample.__file__)[1])[0] + '.py'
-    set_sample_target = os.path.join(app_path(), set_sample_filename)
-
-    copy_file(os.path.join(meipass_path(), bundle_data_folder, set_sample_filename),
-              set_sample_target,
-              even_exists=True)
-
-
-def copy_2config():
-    from wpi.env import user_config_sample_path, user_config_path
-
+def original_config_sample_path():
     if is_exe():
-        config_sample_path = os.path.join(meipass_path(), bundle_data_folder, 'config_sample.py')
+        return os.path.join(meipass_path(), bundle_data_folder, 'config_sample.py')
     else:
         from wpi import config_sample
-        config_sample_path = config_sample.__file__
+        return config_sample.__file__
 
-    copy_file(config_sample_path, user_config_sample_path, even_exists=True)
-    copy_file(config_sample_path, user_config_path, even_exists=False)
+
+def original_ps_sample_path():
+    if is_exe():
+        return os.path.join(meipass_path(), bundle_data_folder, ps_sample_filename)
+    else:
+        from wpi import ps_sample
+        return ps_sample.__file__
 
 
 if __name__ == '__main__':
