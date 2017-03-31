@@ -35,15 +35,15 @@ def meipass_path():
     return getattr(sys, '_MEIPASS')
 
 
-def app_path():
+def exe_path():
     if is_exe():
-        return os.path.dirname(sys.executable)
+        return sys.executable
     elif __file__:
-        return os.path.dirname(__file__)
+        return __file__
 
 
-def app_dir():
-    return os.path.split(app_path())[0]
+def exe_dir():
+    return os.path.dirname(exe_path())
 
 
 def find_7z_in_reg():
@@ -79,25 +79,6 @@ def path_of_7z():
     raise FileNotFoundError
 
 
-def drivers_dir():
-    if is_exe():
-        return os.path.realpath(os.path.join(app_path(), 'drivers'))
-
-    raise FileNotFoundError
-
-
-def copy_config_sample():
-    import shutil
-    from wpi import ps_sample
-    set_sample_filename = os.path.splitext(os.path.split(ps_sample.__file__)[1])[0] + '.py'
-    set_sample_target = os.path.join(app_path(), set_sample_filename)
-    if not os.path.exists(set_sample_target):
-        try:
-            shutil.copy(os.path.join(meipass_path(), set_sample_filename), set_sample_target)
-        except OSError:
-            pass
-
-
 bundle_files = (
     path_of_7z(),
     os.path.join(os.path.split(path_of_7z())[0], Z7_DLL),
@@ -129,6 +110,15 @@ def supply_config(config=None):
 
 
 ALL_BITS = {'32', '64'}
-CUR_BIT = platform.architecture()[0][0:2]
+
+if platform.machine().endswith('64'):
+    CUR_BIT = '64'
+elif platform.machine().endswith('86'):
+    CUR_BIT = '32'
+else:
+    raise Exception
+
 CUR_OS = platform.release().lower()
 ALL_OS = {'xp', '7', '10'} | {CUR_OS}
+
+PYTHON_BIT = platform.architecture()[0][0:2]

@@ -10,7 +10,7 @@ from wpi import load_module, archivelib, version
 
 import wpi.inf
 
-from wpi.env import is_exe, app_dir, meipass_path, bundle_data_folder, ALL_BITS, CUR_BIT, CUR_OS, ALL_OS,\
+from wpi.env import is_exe, exe_dir, meipass_path, bundle_data_folder, ALL_BITS, CUR_BIT, CUR_OS, ALL_OS,\
     config_sample_filename, config_filename, ps_sample_filename, def_ps_filename, def_drivers_dirname
 
 
@@ -62,8 +62,9 @@ def is_match(inf_bytes, driver):
     models = wpi.inf.utils.get_models(inf_data)
 
     for model, namek_files_hids in models.items():
-        if CUR_BIT == '32' and model[1].lower() not in (None, 'ntx86'):
+        if CUR_BIT == '32' and model[1] is not None and model[1].lower() != 'ntx86':
             continue
+
         elif CUR_BIT == '64' and model[1].lower() != 'ntamd64':
             continue
 
@@ -241,6 +242,8 @@ def install_driver(des_driver, sc):
     import tempfile
     import shutil
 
+    print('install_driver ', CUR_BIT, CUR_OS)
+
     from wpi.driver import Drivers
 
     # archive=None, inf_in_archive=None, inf_path=None
@@ -281,15 +284,18 @@ def install_driver(des_driver, sc):
         if best_archive_infs:
             archive = best_archive_infs[0][0]
             iia = best_archive_infs[0][1][0]
+            print('best:', archive, iia)
 
         else:
             compatible_archive_infs = _get_archive_infs_list(des_driver.name, {CUR_BIT}, sc.drivers_dir,
                                                              sc.archive_exts, sc.z7_path)
             if compatible_archive_infs:
-                archive = best_archive_infs[0][0]
-                iia = best_archive_infs[0][1][0]
+                archive = compatible_archive_infs[0][0]
+                iia = compatible_archive_infs[0][1][0]
+                print('compatible:', archive, iia)
 
         if archive and iia:
+            print(archive, iia)
             archivelib.extract_all(archive, tempdir, sc.z7_path)
             inf_path = os.path.join(tempdir, iia)
         elif inf_path_:
@@ -301,17 +307,17 @@ def install_driver(des_driver, sc):
     print(inf_path, des_driver.name)
     sysdrivers.add_by_inf(inf_path, des_driver.name)
 
-    try:
-        shutil.rmtree(tempdir)
-    except OSError:
-        pass
+    # try:
+    #    shutil.rmtree(tempdir)
+    # except OSError:
+    #    pass
 
 
 def install(printers, sc):
     from wpi.printer import Printers
 
     for p in printers:
-
+        print(p.name)
         try:
             print('try install driver')
             install_driver(p.driver, sc)
@@ -349,9 +355,9 @@ def print_head():
 
 
 def main():
-    # if not ctypes.windll.shell32.IsUserAnAdmin():
-    #     print('Not run as Administrator!')
-    #     exit()
+    if not ctypes.windll.shell32.IsUserAnAdmin():
+        print('Not run as Administrator!')
+        exit()
 
     args = list()
     kwargs = dict()
@@ -376,15 +382,15 @@ def exe_main(ps=None, config=None):
 
     if ps is not None:
         module_ = load_module(ps)
-    elif os.path.exists(os.path.join(app_dir(), def_ps_filename)):
-        module_ = load_config(os.path.join(app_dir(), def_ps_filename))
+    elif os.path.exists(os.path.join(exe_dir(), def_ps_filename)):
+        module_ = load_config(os.path.join(exe_dir(), def_ps_filename))
     else:
         module_ = None
 
     if config:
         sc = supply_config(load_config(config))
-    elif os.path.exists(os.path.join(app_dir(), config_filename)):
-        sc = supply_config(load_config(os.path.join(app_dir(), config_filename)))
+    elif os.path.exists(os.path.join(exe_dir(), config_filename)):
+        sc = supply_config(load_config(os.path.join(exe_dir(), config_filename)))
     else:
         sc = supply_config(Config())
 
@@ -395,9 +401,9 @@ def exe_main(ps=None, config=None):
         exit()
 
     if sc.drivers_dir is None:
-        sc.drivers_dir = os.path.join(app_dir(), def_drivers_dirname)
+        sc.drivers_dir = os.path.join(exe_dir(), def_drivers_dirname)
 
-    interactive_loop(sc, app_dir())
+    interactive_loop(sc, exe_dir())
 
 
 def script_main():
@@ -407,10 +413,11 @@ def script_main():
 def interactive_loop(sc, m_target_dir):
     os.system('cls')
     print_head()
+    print(m_target_dir)
     while True:
-        print('m to make default sample config, sample ps and drivers structure... \n',
-              'q to quit.\n',
-              'or input a module path wtch printers', end='')
+        print('m to make default sample config, sample ps and drivers structure... \n' +
+              'q to quit.\n' +
+              'or input a module path wtch printers')
         print('>', end='')
 
         user_input = input()
@@ -436,7 +443,7 @@ def _m_cmd(target_dir):
 
     target_ps_sample = os.path.join(target_dir, ps_sample_filename)
 
-    copy_file(original_ps_sample_path, target_ps_sample, even_exists=True)
+    copy_file(original_ps_sample_path(), target_ps_sample, even_exists=True)
 
     target_drivers_dir = os.path.join(target_dir, def_drivers_dirname)
     make_driver_dir_structure(target_drivers_dir)
