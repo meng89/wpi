@@ -109,6 +109,9 @@ def supply_config(config=None):
     return c
 
 
+CUR_OS = platform.release().lower()
+ALL_OS = {'xp', '7', '10'} | {CUR_OS}
+
 ALL_BITS = {'32', '64'}
 
 if platform.machine().endswith('64'):
@@ -118,7 +121,5 @@ elif platform.machine().endswith('86'):
 else:
     raise Exception
 
-CUR_OS = platform.release().lower()
-ALL_OS = {'xp', '7', '10'} | {CUR_OS}
 
 PYTHON_BIT = platform.architecture()[0][0:2]
