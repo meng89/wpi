@@ -1,7 +1,7 @@
 import os
 import platform
 import sys
-from wpi import load_module, config_sample, ps_sample
+from wpi import load_module, config_sample
 
 
 bundle_data_folder = '_data'
@@ -13,8 +13,6 @@ Z7_DLL = '7z.dll'
 config_sample_filename = 'config_sample.py'
 config_filename = 'config.py'
 
-ps_sample_filename = os.path.splitext(os.path.split(ps_sample.__file__)[1])[0] + '.py'
-
 def_ps_filename = '_.py'
 
 def_drivers_dirname = 'drivers'
@@ -22,6 +20,8 @@ def_drivers_dirname = 'drivers'
 user_config_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi')
 user_config_sample_path = os.path.join(user_config_dir, 'config_sample.py')
 user_config_path = os.path.join(user_config_dir, config_filename)
+
+user_logs_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi_logs')
 
 
 def is_exe():
@@ -79,12 +79,14 @@ def path_of_7z():
     raise FileNotFoundError
 
 
-bundle_files = (
-    path_of_7z(),
-    os.path.join(os.path.split(path_of_7z())[0], Z7_DLL),
-    config_sample.__file__,
-    ps_sample.__file__,
-)
+def bundle_files():
+    from wpi import ps_sample
+    return (
+        path_of_7z(),
+        os.path.join(os.path.split(path_of_7z())[0], Z7_DLL),
+        config_sample.__file__,
+        ps_sample.__file__,
+    )
 
 
 class Config:
@@ -112,6 +114,8 @@ def supply_config(config=None):
 CUR_OS = platform.release().lower()
 ALL_OS = {'xp', '7', '10'} | {CUR_OS}
 
+B32 = '32'
+B64 = '64'
 ALL_BITS = {'32', '64'}
 
 if platform.machine().endswith('64'):
@@ -123,3 +127,8 @@ else:
 
 
 PYTHON_BIT = platform.architecture()[0][0:2]
+
+
+def ps_sample_filename():
+    from wpi import ps_sample
+    return os.path.splitext(os.path.split(ps_sample.__file__)[1])[0] + '.py'

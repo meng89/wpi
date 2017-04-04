@@ -1,7 +1,9 @@
 
-from wpi.des import ep, Printer, Driver, RAWPort, LPRPort, SMBPort, LPR
+from wpi.des import ep, Printer, Driver, RAWPort, SMBPort, LPR
 
 from wpi import add_credential
+
+from wpi.env import CUR_BIT
 
 # HP LaserJet 1020
 # HP LaserJet 1022
@@ -37,17 +39,17 @@ add_credential(host='Printer-Server', user='administrator', password='123456')
 
 # 可以手动指定使用哪个包裹和在包裹里的哪个 inf 文件。
 # archive 不是绝对路径时，程序寻找包裹时会自动拼接配置文件里定义的 drivers_dir。如果没有定义，则使用程序同目录下的 drivers 目录。
-pc1 = ep('172.17.0.11', 'HP LaserJet 1020n', name='hp 1020n 3',
-         archive='32\lj1018_1020_1022-HB-pnp-win32-sc.exe', inf='HPLJ1020.INF')
+pc1 = ep('172.17.0.11', 'HP LaserJet 1022n', name='hp 1022n 3',
+         archive='{bit}\lj1018_1020_1022-HB-pnp-win{bit}-sc.exe'.format(bit=CUR_BIT), inf='HPLJ1020.INF')
 
 
 # 如果想使用以已不在包裹里的 inf 文件
-pc2 = ep('172.17.0.11', 'HP LaserJet 1020n', name='hp 1020n 4',
-         inf=r'\\gentoo\soft\printers_drivers\lj1018_1020_1022-HB-pnp-win32-sc\HPLJ1020.INF')
+pc2 = ep('172.17.0.11', 'HP LaserJet 1022n', name='hp 1022n 4',
+         inf=r'{bit}\lj1018_1020_1022-HB-pnp-win{bit}-sc\HPLJ1020.INF'.format(bit=CUR_BIT))
 
 
 # LPR 端口打印机
-pd1 = ep('172.17.0.11', 'HP LaserJet 1020n', name='hp 1020n 5', protocol=LPR)
+pd1 = ep('172.17.0.11', 'HP LaserJet 1022n', name='hp 1022n 5', protocol=LPR)
 
 
 # 打印机集合文件里需要有一个名为 'printers' 的对象。

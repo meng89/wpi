@@ -6,13 +6,14 @@ class ParameterError(Exception):
 
 
 class RAWPort(TCPIPPort):
-    def __init__(self, address, port=9100, name=None, enable_snmp=False, snmp_dev_index=None, snmp_comunity=None):
+    def __init__(self, address, port=None, name=None, enable_snmp=False, snmp_dev_index=None, snmp_comunity=None):
         super().__init__()
-        self.__dict__['name'] = name or address + '_' + str(port)
 
         self.protocol = RAW
         self.address = address
-        self.port = port
+        self.port = port or 9100
+
+        self.__dict__['name'] = name or address + '_' + str(self.port)
 
         self.enable_snmp = enable_snmp
         self.snmp_dev_index = snmp_dev_index
@@ -20,14 +21,15 @@ class RAWPort(TCPIPPort):
 
 
 class LPRPort(TCPIPPort):
-    def __init__(self, address, port=515, name=None,  enable_snmp=False, snmp_dev_index=None, snmp_comunity=None,
+    def __init__(self, address, port=None, name=None,  enable_snmp=False, snmp_dev_index=None, snmp_comunity=None,
                  queue_name=None, is_enable_byte_count=False):
         super().__init__()
-        self.__dict__['name'] = name or address + '_' + str(port)
 
         self.protocol = LPR
         self.address = address
-        self.port = port
+        self.port = port or 515
+
+        self.__dict__['name'] = name or address + '_' + str(self.port)
 
         self.enable_snmp = enable_snmp
         self.snmp_dev_index = snmp_dev_index

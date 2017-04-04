@@ -1,10 +1,10 @@
+import logging
 
 import hooky
 
 
 class Printers(hooky.Dict):
     def __init__(self):
-        print('__init__ of Printers')
 
         from win32com.client import GetObject
         self._Printer = GetObject('winmgmts:/root/cimv2').Get('Win32_Printer')
@@ -13,8 +13,6 @@ class Printers(hooky.Dict):
         for _ in self._Printer.instances_():
             p = Printer(_)
             self.data[_.DeviceID] = p
-
-        print('__init__ END')
 
     def save(self):
         for name, printer in self.data.items():
@@ -51,7 +49,7 @@ class Printer:
                 or self._old_name != name:
 
             self.win32obj.DeviceID = name
-
+            logging.info('name: {}, driver name: {}, port name: {}'.format(name, self.driver_name, self.port_name))
             self.win32obj.Put_()
 
     @property

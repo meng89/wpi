@@ -1,7 +1,10 @@
 from win32com.client import GetObject
 import hooky
 
-obj_name = 'Win32_PrinterDriver'
+_OBJ_NAME = 'Win32_PrinterDriver'
+
+B32 = 'Windows NT x86'
+B64 = 'Windows x64'
 
 
 class Drivers(hooky.Dict):
@@ -37,7 +40,7 @@ class Drivers(hooky.Dict):
 
         wmi = GetObject('winmgmts:/root/cimv2')
 
-        drivers = wmi.InstancesOf(obj_name)
+        drivers = wmi.InstancesOf(_OBJ_NAME)
 
         for driver in drivers:
             if key == driver.name.rsplit(',', 2):

@@ -1,5 +1,6 @@
 import copy
 import time
+import logging
 
 import win32serviceutil
 from win32com.client import GetObject
@@ -83,7 +84,7 @@ class Ports(hooky.Dict):
             self._localregtips.save_to(_LOCAL_PORT_REG_KEY)
             self._old_localregtips = copy.deepcopy(self._localregtips)
 
-            print('ports.save restart print spooler')
+            logging.info('restart print spooler')
             _ = 'Print Spooler'
             win32serviceutil.RestartService('Print Spooler')
             sec = 0

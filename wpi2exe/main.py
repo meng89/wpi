@@ -123,7 +123,7 @@ def main():
             name=output_filename_,
             console=console_,
             upx_dir=upx_dir,
-            binarys=[(path, wpi.env.bundle_data_folder) for path in wpi.env.bundle_files]
+            binarys=[(path, wpi.env.bundle_data_folder) for path in wpi.env.bundle_files()]
         )
 
         if verpatch_path is not None:
