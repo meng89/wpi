@@ -5,12 +5,6 @@ from wpi import add_credential
 
 from wpi.env import CUR_BIT
 
-# HP LaserJet 1020
-# HP LaserJet 1022
-# HP LaserJet 1022n
-# HP LaserJet 1022nw
-# HP LaserJet 1018
-
 
 # pa1 和 pa2 除了安装好后打印机列表里显示的名字不同，打印机端口和驱动都是一样的。
 # ep 的意思是 easy printer， ep 其实是一个函数，返回一个 Printer 实例。

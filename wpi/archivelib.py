@@ -27,7 +27,7 @@ def list_names(archive, path_of_7z=None):
             return z.namelist()
 
     if path_of_7z is None:
-        raise Exception
+        return
 
     list_head = '   Date      Time    Attr         Size   Compressed  Name'
     list_cut = '------------------- ----- ------------ ------------  ------------------------'
@@ -59,7 +59,7 @@ def read(archive, filename, path_of_7z=None):
             return io.BytesIO(z.read(filename))
 
     if path_of_7z is None:
-        raise Exception
+        return None
 
     return Popen('{} e -so {} {}'.format(path_of_7z, archive, filename), shell=True, stdout=PIPE).communicate()[0]
 
@@ -73,5 +73,4 @@ def extract_all(archive, path, path_of_7z=None):
     elif path_of_7z:
         Popen('{} x {} -o{}'.format(path_of_7z, archive, path), shell=True, stdout=PIPE).communicate()
     else:
-        print(path_of_7z)
-        raise Exception
+        return None

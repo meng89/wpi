@@ -1,6 +1,8 @@
 import os
 import platform
 import sys
+import logging
+
 from wpi import load_module, config_sample
 
 
@@ -69,14 +71,21 @@ def find_7z_in_reg():
 
 def path_of_7z():
     if is_exe():
-        return os.path.join(meipass_path(), bundle_data_folder, Z7_EXE)
+        z7_path = os.path.join(meipass_path(), bundle_data_folder, Z7_EXE)
+        if os.path.isfile(z7_path):
+            return z7_path
+
+    b32_dir, b64_dir = find_7z_in_reg()
+
+    if b32_dir and os.path.isfile(os.path.join(b32_dir, Z7_EXE)):
+        return os.path.isfile(os.path.join(b32_dir, Z7_EXE))
+
+    elif b64_dir and os.path.isfile(os.path.join(b64_dir, Z7_EXE)):
+        return os.path.isfile(os.path.join(b64_dir, Z7_EXE))
 
     else:
-        for _7z_path in [os.path.join(one, Z7_EXE) for one in find_7z_in_reg()]:
-            if os.path.isfile(_7z_path):
-                return _7z_path
-
-    raise FileNotFoundError
+        logging.warning('7-Zip cannot be found.')
+        return None
 
 
 def bundle_files():

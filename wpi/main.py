@@ -211,7 +211,7 @@ def install_driver(des_driver, sc):
     for one in sysdrivers:
         if one[0] == des_driver.name and (one[2], CUR_BIT) in ((B32, env.B32), (B64, env.B64)):
             logging.warning('driver: {} already existed, abort.'.format(des_driver.name))
-            #return None
+            return None
 
     inf_path = None
 

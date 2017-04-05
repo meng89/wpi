@@ -1,9 +1,22 @@
 import os
 import sys
 import tempfile
+import logging
+
 from subprocess import Popen
 
 import wpi.version
+
+
+def set_logging():
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.NOTSET)
+
+    ch = logging.StreamHandler()
+    ch_formatter = logging.Formatter('  --[%(filename)s:%(lineno)d]: %(levelname)s: %(message)s')
+    ch.setFormatter(ch_formatter)
+    ch.setLevel(logging.WARNING)
+    root_logger.addHandler(ch)
 
 
 def cur_file_dir():
@@ -90,13 +103,13 @@ def main():
 
     from wpi2exe import config_sample
 
+    set_logging()
+
     config_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi2exe')
     os.makedirs(config_dir, exist_ok=True)
 
     user_config_sample_path = os.path.join(config_dir, 'config_sample.py')
     user_config_path = os.path.join(config_dir, 'config.py')
-
-    print(user_config_path)
 
     if not os.path.exists(user_config_sample_path) or \
             open(config_sample.__file__, 'rb').read() != open(user_config_sample_path, 'rb').read():
@@ -104,15 +117,19 @@ def main():
 
     if not os.path.exists(user_config_path):
         shutil.copyfile(user_config_sample_path, user_config_path)
-        print('"config.py" not found, copied. you may want to edit {} and rerun this again'.format(user_config_path))
-        exit()
+        logging.warning('{} not found, copied. you may want to edit it and rerun again'.format(user_config_path))
 
     config = load_module(user_config_path)
 
     verpatch_path = getattr(config, 'verpathc_path', None)
     upx_dir = getattr(config, 'upx_dir', None)
 
-    output_dir = getattr(config, 'output_dir', None) or os.path.expanduser('~')
+    if getattr(config, 'output_dir', None) is None:
+        def_out_put = os.path.join(config_dir, 'exe')
+        logging.warning('output_dir is None, use: {}'.format(def_out_put))
+        output_dir = def_out_put
+    else:
+        output_dir = getattr(config, 'output_dir', None)
 
     output_filename = getattr(config, 'output_filename', None) or 'wpi'
 
@@ -123,7 +140,7 @@ def main():
             name=output_filename_,
             console=console_,
             upx_dir=upx_dir,
-            binarys=[(path, wpi.env.bundle_data_folder) for path in wpi.env.bundle_files()]
+            binarys=[(path, wpi.env.bundle_data_folder) for path in wpi.env.bundle_files() if path is not None]
         )
 
         if verpatch_path is not None:
