@@ -38,7 +38,7 @@ WPI 是一个使用 Python 3 编写的安装非本地打印机 （包括驱动�
    wpi2exe
 
 
-这样会生成单一的 exe 文件， wpi2exe 使用 %LOCALAPPDATA%\\wpi2exe\\config.py 作为配置文件，如果此文件不存在，wpi2exe 会自动创建它。
+这样会生成单一的 exe 文件， wpi2exe 使用 `LOCALAPPDATA%\\wpi2exe\\config.py` 作为配置文件，如果此文件不存在，**wpi2exe** 会自动创建它。
 可以编辑它以设置输出目录等。正如后缀名所示，此配置文件是一个 Python 脚本。
 
 
