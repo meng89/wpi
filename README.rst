@@ -45,12 +45,14 @@ WPI 是一个使用 Python 3 编写的安装非本地打印机 （包括驱动�
 参数用法
 ====
 
-命令行参数的定义类似 Python 函数，如果把 wpi 当成一个 Python 函数看待，那么 wpi 的定义就是 *wpi(ps=None, config=None)*。
+命令行参数的定义类似 Python 函数。
 
 具名参数运行例子:
 ::
 
     wpi ps=my_printers.py config=my_config.py
+
+如果把 wpi 当成一个 Python 函数看待，那么 wpi 的定义就是 *wpi(ps=None, config=None)*。
 
 
 参数 ps
