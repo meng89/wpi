@@ -4,7 +4,6 @@ import platform
 import sys
 
 from wpi import load_module
-from wpi.user_sample import config_, ps_
 
 bundle_data_folder = '_data'
 
@@ -101,9 +100,10 @@ def path_of_7z():
 
 
 def bundle_files():
+    from wpi.user_sample import config_, ps_
     return (
         path_of_7z(),
-        os.path.join(os.path.split(path_of_7z())[0], Z7_DLL),
+        os.path.join(os.path.split(path_of_7z()), Z7_DLL),
         config_.__file__,
         ps_.__file__,
     )

@@ -42,11 +42,9 @@ setup(name=NAME,
       packages=[
           'wpi',
           'wpi.inf',
+          'wpi.user_sample',
           'wpi2exe',
       ],
-      # scripts=[
-      #    'main.py',
-      # ],
       entry_points={
           'console_scripts': [
                'wpi=wpi.main:main',
