@@ -9,14 +9,9 @@ import wpi.version
 
 
 def set_logging():
-    root_logger = logging.getLogger()
-    root_logger.setLevel(logging.NOTSET)
+    from wpi.log import set_stream_handler
 
-    ch = logging.StreamHandler()
-    ch_formatter = logging.Formatter('  --[%(filename)s:%(lineno)d]: %(levelname)s: %(message)s')
-    ch.setFormatter(ch_formatter)
-    ch.setLevel(logging.WARNING)
-    root_logger.addHandler(ch)
+    set_stream_handler()
 
 
 def cur_file_dir():
@@ -97,23 +92,25 @@ def find_7z_path():
 
 def main():
     import shutil
+
     import wpi.main
-    import wpi.env
+
+    from wpi import env
     from wpi import load_module
 
-    from wpi2exe import config_sample
+    from wpi2exe import config_
 
     set_logging()
 
     config_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi2exe')
     os.makedirs(config_dir, exist_ok=True)
 
-    user_config_sample_path = os.path.join(config_dir, 'config_sample.py')
-    user_config_path = os.path.join(config_dir, 'config.py')
+    user_config_sample_path = os.path.join(config_dir, env.get_config__filename())
+    user_config_path = os.path.join(config_dir, env.def_config_filename)
 
     if not os.path.exists(user_config_sample_path) or \
-            open(config_sample.__file__, 'rb').read() != open(user_config_sample_path, 'rb').read():
-        shutil.copyfile(config_sample.__file__, user_config_sample_path)
+            open(config_.__file__, 'rb').read() != open(user_config_sample_path, 'rb').read():
+        shutil.copyfile(config_.__file__, user_config_sample_path)
 
     if not os.path.exists(user_config_path):
         shutil.copyfile(user_config_sample_path, user_config_path)
@@ -140,7 +137,7 @@ def main():
             name=output_filename_,
             console=console_,
             upx_dir=upx_dir,
-            binarys=[(path, wpi.env.bundle_data_folder) for path in wpi.env.bundle_files() if path is not None]
+            binarys=[(path, env.bundle_data_folder) for path in env.bundle_files() if path is not None]
         )
 
         if verpatch_path is not None:
@@ -148,6 +145,7 @@ def main():
 
     do_build(True, output_filename)
     do_build(False, output_filename + '_nw')
+
 
 if __name__ == '__main__':
     main()

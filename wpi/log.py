@@ -1,15 +1,16 @@
 import logging
 
 
-_is_setted = False
+_is_file_handler_setted = False
+_is_stream_handler_setted = False
 
 
-def set_logging(filename):
-    global _is_setted
-    if _is_setted:
-        raise Exception
+def set_file_handler(filename):
+    global _is_file_handler_setted
+    if _is_file_handler_setted:
+        return
     else:
-        _is_setted = True
+        _is_file_handler_setted = True
 
     root_logger = logging.getLogger()
     root_logger.setLevel(logging.NOTSET)
@@ -29,4 +30,19 @@ def set_logging(filename):
     ch.setLevel(logging.WARNING)
     root_logger.addHandler(ch)
 
-    return root_logger
+
+def set_stream_handler():
+    global _is_stream_handler_setted
+    if _is_stream_handler_setted:
+        return
+    else:
+        _is_stream_handler_setted = True
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.NOTSET)
+
+    ch = logging.StreamHandler()
+    ch_formatter = logging.Formatter('  --[%(filename)s:%(lineno)d]: %(levelname)s: %(message)s')
+    ch.setFormatter(ch_formatter)
+    ch.setLevel(logging.WARNING)
+    root_logger.addHandler(ch)

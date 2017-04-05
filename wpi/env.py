@@ -1,10 +1,10 @@
+import logging
 import os
 import platform
 import sys
-import logging
 
-from wpi import load_module, config_sample
-
+from wpi import load_module
+from wpi.user_sample import config_, ps_
 
 bundle_data_folder = '_data'
 
@@ -12,16 +12,28 @@ Z7_FOLDER = '7z'
 Z7_EXE = '7z.exe'
 Z7_DLL = '7z.dll'
 
-config_sample_filename = 'config_sample.py'
-config_filename = 'config.py'
+
+def get_ps__filename():
+    from wpi.user_sample import ps_
+
+    return os.path.splitext(os.path.split(ps_.__file__)[1])[0] + '.py'
+
+
+def get_config__filename():
+    from wpi.user_sample import config_
+
+    return os.path.splitext(os.path.split(config_.__file__)[1][0] + '.py')
+
+
+def_config_filename = 'config.py'
 
 def_ps_filename = '_.py'
 
 def_drivers_dirname = 'drivers'
 
-user_config_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi')
-user_config_sample_path = os.path.join(user_config_dir, 'config_sample.py')
-user_config_path = os.path.join(user_config_dir, config_filename)
+user_wpi_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi')
+user_config_sample_path = os.path.join(user_wpi_dir, 'config_.py')
+user_config_path = os.path.join(user_wpi_dir, def_config_filename)
 
 user_logs_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi_logs')
 
@@ -89,12 +101,11 @@ def path_of_7z():
 
 
 def bundle_files():
-    from wpi import ps_sample
     return (
         path_of_7z(),
         os.path.join(os.path.split(path_of_7z())[0], Z7_DLL),
-        config_sample.__file__,
-        ps_sample.__file__,
+        config_.__file__,
+        ps_.__file__,
     )
 
 
@@ -136,8 +147,3 @@ else:
 
 
 PYTHON_BIT = platform.architecture()[0][0:2]
-
-
-def ps_sample_filename():
-    from wpi import ps_sample
-    return os.path.splitext(os.path.split(ps_sample.__file__)[1])[0] + '.py'

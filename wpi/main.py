@@ -1,25 +1,19 @@
 import ctypes
-import os
-import sys
-import logging
-import tempfile
-import shutil
 import datetime
+import logging
+import os
+import shutil
+import sys
+import tempfile
+
 import chardet
-
-
-import wpi.ps_sample
-
-from wpi import load_module, archivelib, version
 
 import wpi.inf
 
 import wpi.log
 
-from wpi.env import is_exe, exe_dir, meipass_path, bundle_data_folder, ALL_BITS, CUR_BIT, CUR_OS, ALL_OS,\
-    config_sample_filename, config_filename, def_ps_filename, def_drivers_dirname, user_logs_dir,\
-    PYTHON_BIT
-
+from wpi import load_module, archivelib, version
+from wpi.env import ALL_BITS, CUR_BIT, CUR_OS, ALL_OS, PYTHON_BIT
 
 supplied_config = None
 
@@ -206,6 +200,7 @@ def install_port(des_port):
 def install_driver(des_driver, sc):
     from wpi.driver import Drivers, B32, B64
     from wpi import env
+
     sysdrivers = Drivers()
 
     for one in sysdrivers:
@@ -304,6 +299,9 @@ def print_head():
 
 
 def main():
+    from wpi.env import is_exe, user_logs_dir
+    from wpi.log import set_file_handler, set_stream_handler
+
     if not ctypes.windll.shell32.IsUserAnAdmin():
         print('Not run as Administrator!')
         exit()
@@ -318,6 +316,14 @@ def main():
         else:
             kwargs[p_a[0]] = p_a[1]
 
+    log_filename = datetime.datetime.now().strftime('%Y_%m_%d-%H_%M_%S_%f') + '.log.txt'
+    os.makedirs(user_logs_dir, exist_ok=True)
+
+    set_file_handler(os.path.join(user_logs_dir, log_filename))
+    set_stream_handler()
+
+    log_sys_info()
+
     if is_exe():
         exe_main(*args, **kwargs)
     else:
@@ -325,9 +331,10 @@ def main():
 
 
 def exe_main(ps=None, config=None):
-
     import tempfile
-    from wpi.env import load_config, Config, supply_config
+
+    from wpi.env import load_config, Config, supply_config, exe_dir,\
+        def_ps_filename, def_config_filename, def_drivers_dirname
 
     if ps is not None:
         module_ = load_module(ps)
@@ -338,18 +345,12 @@ def exe_main(ps=None, config=None):
 
     if config:
         sc = supply_config(load_config(config))
-    elif os.path.exists(os.path.join(exe_dir(), config_filename)):
-        sc = supply_config(load_config(os.path.join(exe_dir(), config_filename)))
+    elif os.path.exists(os.path.join(exe_dir(), def_config_filename)):
+        sc = supply_config(load_config(os.path.join(exe_dir(), def_config_filename)))
     else:
         sc = supply_config(Config())
 
     os.chdir(tempfile.gettempdir())
-
-    log_filename = datetime.datetime.now().strftime('%Y_%m_%d-%H_%M_%S_%f') + '.log.txt'
-    os.makedirs(user_logs_dir, exist_ok=True)
-    wpi.log.set_logging(os.path.join(user_logs_dir, log_filename))
-
-    log_sys_info()
 
     if module_ is not None:
         install(module_.printers, sc)
@@ -361,8 +362,33 @@ def exe_main(ps=None, config=None):
     interactive_loop(sc, exe_dir())
 
 
-def script_main():
-    pass
+def script_main(ps=None, config=None):
+    import tempfile
+
+    from wpi.env import load_config, Config, supply_config, user_wpi_dir, def_config_filename, def_drivers_dirname
+
+    if ps is not None:
+        module_ = load_module(ps)
+    else:
+        module_ = None
+
+    if config:
+        sc = supply_config(load_config(config))
+    elif os.path.exists(os.path.join(user_wpi_dir, def_config_filename)):
+        sc = supply_config(load_config(os.path.join(user_wpi_dir, def_config_filename)))
+    else:
+        sc = supply_config(Config())
+
+    os.chdir(tempfile.gettempdir())
+
+    if module_ is not None:
+        install(module_.printers, sc)
+        exit()
+
+    if sc.drivers_dir is None:
+        sc.drivers_dir = os.path.join(user_wpi_dir, def_drivers_dirname)
+
+    interactive_loop(sc, user_wpi_dir)
 
 
 def interactive_loop(sc, m_target_dir):
@@ -390,17 +416,15 @@ def interactive_loop(sc, m_target_dir):
 
 
 def _m_cmd(target_dir):
-    from wpi.env import ps_sample_filename
+    from wpi.env import def_config_filename, def_drivers_dirname, get_config__filename, get_ps__filename
 
-    target_config_sample_path = os.path.join(target_dir, config_sample_filename)
-    target_config_path = os.path.join(target_dir, config_filename)
+    target_config__path = os.path.join(target_dir, get_config__filename())
+    target_config_path = os.path.join(target_dir, def_config_filename)
 
-    copy_file(original_config_sample_path(), target_config_sample_path, even_exists=True)
-    copy_file(original_config_sample_path(), target_config_path, even_exists=False)
+    copy_file(original_config__path(), target_config__path, even_exists=True)
+    copy_file(original_config__path(), target_config_path, even_exists=False)
 
-    target_ps_sample = os.path.join(target_dir, ps_sample_filename())
-
-    copy_file(original_ps_sample_path(), target_ps_sample, even_exists=True)
+    copy_file(original_ps_sample_path(), os.path.join(target_dir, get_ps__filename()), even_exists=True)
 
     target_drivers_dir = os.path.join(target_dir, def_drivers_dirname)
     make_driver_dir_structure(target_drivers_dir)
@@ -428,27 +452,31 @@ def copy_file(source, target, even_exists=False):
         _copy()
 
 
-def original_config_sample_path():
+def original_config__path():
+    from wpi.env import is_exe, meipass_path, bundle_data_folder, get_config__filename
+
     if is_exe():
-        return os.path.join(meipass_path(), bundle_data_folder, 'config_sample.py')
+        return os.path.join(meipass_path(), bundle_data_folder, get_config__filename())
     else:
-        from wpi import config_sample
-        return config_sample.__file__
+        from wpi.user_sample import config_
+        return config_.__file__
 
 
 def original_ps_sample_path():
-    from wpi.env import ps_sample_filename
+    from wpi.env import get_ps__filename, is_exe, meipass_path, bundle_data_folder
+
     if is_exe():
-        return os.path.join(meipass_path(), bundle_data_folder, ps_sample_filename())
+        return os.path.join(meipass_path(), bundle_data_folder, get_ps__filename())
     else:
-        from wpi import ps_sample
-        return ps_sample.__file__
+        from wpi.user_sample import ps_
+        return ps_.__file__
 
 
 def log_sys_info():
-    logging.info('CUR_BIT:', CUR_BIT)
-    logging.info('CUR_OS:', CUR_OS)
-    logging.info('python bit:', PYTHON_BIT)
+    logging.info('OS bit:', CUR_BIT)
+    logging.info('OS release:', CUR_OS)
+    logging.info('Python bit:', PYTHON_BIT)
+    logging.info('Python sys.version: {}'.format(sys.version))
 
 
 if __name__ == '__main__':
