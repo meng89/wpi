@@ -93,7 +93,8 @@ WPI 是一个使用 Python 3 编写的安装非本地打印机 （包括驱动�
 
 %LOCALAPPDATA% 在哪？
 ``````````````````
-它是一个环境变量，如果你的账户名是*韩梅梅*，而且系统是 Windows 7 的话，那么 **%LOCALAPPDATA%** 可能就是： **C:\\Users\\韩梅梅\\AppData\\Local\\**
+它是一个环境变量，如果你的账户名是 **韩梅梅**，而且系统是 Windows 7 的话，
+那么 **%LOCALAPPDATA%** 可能就是： **C:\\Users\\韩梅梅\\AppData\\Local\\**
 
 
 问：打印机列表文件怎么编写？
