@@ -281,7 +281,7 @@ def install(printers, sc):
 def print_head():
     from shutil import get_terminal_size
 
-    conlose_len = get_terminal_size()[0]
+    conlose_len = get_terminal_size()[0] - 2
     cl = conlose_len
 
     header_len = min([62, cl]) - 2
@@ -311,14 +311,15 @@ def print_head():
         '',
         _wpi(),
         '',
-        _item('Version', 'abc'),
-        _item('Author', version.__version__),
+        _item('Version', version.__version__),
+        _item('License', 'LGPL v3'),
+        _item('Author', 'Chen Meng'),
         _item('HomePage', 'https://github.com/meng89/wpi'),
         sharp(),
     ]
+
     for _ in ss:
         print(_)
-    # print('\n'.join(ss))
 
 
 def main():
