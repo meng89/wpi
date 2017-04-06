@@ -7,7 +7,6 @@ from wpi import load_module
 
 bundle_data_folder = '_data'
 
-Z7_FOLDER = '7z'
 Z7_EXE = '7z.exe'
 Z7_DLL = '7z.dll'
 
@@ -21,7 +20,7 @@ def get_ps__filename():
 def get_config__filename():
     from wpi.user_sample import config_
 
-    return os.path.splitext(os.path.split(config_.__file__)[1][0] + '.py')
+    return os.path.splitext(os.path.split(config_.__file__)[1])[0] + '.py'
 
 
 def_config_filename = 'config.py'
@@ -60,27 +59,25 @@ def exe_dir():
 
 
 def _find_7z_in_reg():
-    regkeys = (r'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
-               r'HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall')
+    # regkeys = (r'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
+    #           r'HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall')
 
     from wpi.reg import Node
 
     b32_location = None
     b64_location = None
 
-    for one in regkeys:
-        n = Node(one)
-        for k, sub in n.items():
-            if k == '7-Zip':
-                if sub.tips['DisplayName'].endswith('(x64)'):
-                    b64_location = sub.tips['InstallLocation']
-                else:
-                    b32_location = sub.tips['InstallLocation']
+    n = Node(r'HKEY_LOCAL_MACHINE\SOFTWARE\7-Zip')
+    for k, v in n.tips.items():
+        if k == 'Path32':
+            b32_location = v
+        elif k == 'Path64':
+            b64_location = v
 
     return b32_location, b64_location
 
 
-def get_z7_dir():
+def get_7z_dir():
     if is_exe():
         z7_dir = os.path.join(meipass_path(), bundle_data_folder)
         if os.path.isfile(z7_dir):
@@ -100,14 +97,14 @@ def get_z7_dir():
 
 
 def get_7z_path():
-    return os.path.join(get_z7_dir(), Z7_EXE)
+    return os.path.join(get_7z_dir(), Z7_EXE)
 
 
 def bundle_files():
     from wpi.user_sample import config_, ps_
     return (
-        os.path.join(get_z7_dir(), Z7_EXE),
-        os.path.join(get_z7_dir(), Z7_DLL),
+        os.path.join(get_7z_dir(), Z7_EXE),
+        os.path.join(get_7z_dir(), Z7_DLL),
         config_.__file__,
         ps_.__file__,
     )

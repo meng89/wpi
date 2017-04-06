@@ -11,7 +11,7 @@ def is_can_handle(filename, path_of_7z=None):
 
     elif path_of_7z is not None:
         for bytes_line in io.BytesIO(
-                Popen('{} t {}'.format(path_of_7z, filename), shell=True, stdout=PIPE).communicate()[0])\
+                Popen('"{}" t {}'.format(path_of_7z, filename), shell=True, stdout=PIPE).communicate()[0])\
                 .readlines():
 
             if bytes_line.decode().strip() == 'Everything is Ok':
@@ -32,7 +32,7 @@ def list_names(archive, path_of_7z=None):
     list_head = '   Date      Time    Attr         Size   Compressed  Name'
     list_cut = '------------------- ----- ------------ ------------  ------------------------'
 
-    _b = Popen('{} l -so {}'.format(path_of_7z, archive), shell=True, stdout=PIPE).communicate()[0]
+    _b = Popen('"{}" l -so {}'.format(path_of_7z, archive), shell=True, stdout=PIPE).communicate()[0]
     _code = chardet.detect(_b)['encoding']
     bytes_file = io.BytesIO(_b)
     lines = [line.decode(_code).rstrip() for line in bytes_file.readlines()]
@@ -56,12 +56,12 @@ def list_names(archive, path_of_7z=None):
 def read(archive, filename, path_of_7z=None):
     if zipfile.is_zipfile(archive):
         with zipfile.ZipFile(archive) as z:
-            return io.BytesIO(z.read(filename))
+            return z.read(filename)
 
     if path_of_7z is None:
         return None
 
-    return Popen('{} e -so {} {}'.format(path_of_7z, archive, filename), shell=True, stdout=PIPE).communicate()[0]
+    return Popen('"{}" e -so {} {}'.format(path_of_7z, archive, filename), shell=True, stdout=PIPE).communicate()[0]
 
 
 def extract_all(archive, path, path_of_7z=None):
@@ -71,6 +71,6 @@ def extract_all(archive, path, path_of_7z=None):
             return
 
     elif path_of_7z:
-        Popen('{} x {} -o{}'.format(path_of_7z, archive, path), shell=True, stdout=PIPE).communicate()
+        Popen('"{}" x {} -o{}'.format(path_of_7z, archive, path), shell=True, stdout=PIPE).communicate()
     else:
         return None

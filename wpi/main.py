@@ -58,8 +58,11 @@ def get_all_files(d):
 
 
 def is_match(inf_bytes, driver):
+    try:
+        inf_data = wpi.inf.loads.loads(inf_bytes.decode(chardet.detect(inf_bytes)['encoding']))
+    except Exception:
+        return False
 
-    inf_data = wpi.inf.loads.loads(inf_bytes.decode(chardet.detect(inf_bytes)['encoding']))
     models = wpi.inf.utils.get_models(inf_data)
 
     for model, namek_files_hids in models.items():
@@ -73,16 +76,6 @@ def is_match(inf_bytes, driver):
             return True
 
     return False
-
-
-def match_infs(inf_files, driver):
-    legal_files = []
-
-    for file in inf_files:
-        if is_match(open(file, 'rb').read(), driver):
-            legal_files.append(file)
-
-    return legal_files
 
 
 def get_legal_archive_infs_list(best_archives, driver, z7_path):
@@ -304,7 +297,7 @@ def main():
 
     if not ctypes.windll.shell32.IsUserAnAdmin():
         print('Not run as Administrator!')
-        exit()
+        sys.exit()
 
     args = list()
     kwargs = dict()

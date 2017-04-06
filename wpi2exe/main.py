@@ -52,6 +52,8 @@ def build(script, distpath, name=None, console=True, upx_dir=None, binarys=None,
     else:
         cmd += '--windowed '
 
+    cmd += '--uac-admin '
+
     for src, dest in binarys:
         cmd += '--add-binary "{}";"{}" '.format(src, dest)
 
@@ -105,15 +107,16 @@ def main():
     config_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi2exe')
     os.makedirs(config_dir, exist_ok=True)
 
-    user_config_sample_path = os.path.join(config_dir, env.get_config__filename())
-    user_config_path = os.path.join(config_dir, env.def_config_filename)
+    config__filename = os.path.split(config_.__file__)[1]
+    user_config__path = os.path.join(config_dir, config__filename)
+    user_config_path = os.path.join(config_dir, 'config.py')
 
-    if not os.path.exists(user_config_sample_path) or \
-            open(config_.__file__, 'rb').read() != open(user_config_sample_path, 'rb').read():
-        shutil.copyfile(config_.__file__, user_config_sample_path)
+    if not os.path.exists(user_config__path) or \
+            open(config_.__file__, 'rb').read() != open(user_config__path, 'rb').read():
+        shutil.copyfile(config_.__file__, user_config__path)
 
     if not os.path.exists(user_config_path):
-        shutil.copyfile(user_config_sample_path, user_config_path)
+        shutil.copyfile(config_.__file__, user_config_path)
         logging.warning('{} not found, copied. you may want to edit it and rerun again'.format(user_config_path))
 
     config = load_module(user_config_path)

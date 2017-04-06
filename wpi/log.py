@@ -24,12 +24,6 @@ def set_file_handler(filename):
     fh.setLevel(logging.NOTSET)
     root_logger.addHandler(fh)
 
-    ch = logging.StreamHandler()
-    ch_formatter = logging.Formatter('  --[%(filename)s:%(lineno)d]: %(levelname)s: %(message)s')
-    ch.setFormatter(ch_formatter)
-    ch.setLevel(logging.WARNING)
-    root_logger.addHandler(ch)
-
 
 def set_stream_handler():
     global _is_stream_handler_setted
@@ -42,7 +36,7 @@ def set_stream_handler():
     root_logger.setLevel(logging.NOTSET)
 
     ch = logging.StreamHandler()
-    ch_formatter = logging.Formatter('  --[%(filename)s:%(lineno)d]: %(levelname)s: %(message)s')
+    ch_formatter = logging.Formatter('  ---%(filename)s:%(lineno)d---: %(levelname)s: %(message)s')
     ch.setFormatter(ch_formatter)
     ch.setLevel(logging.WARNING)
     root_logger.addHandler(ch)
