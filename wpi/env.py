@@ -59,7 +59,7 @@ def exe_dir():
     return os.path.dirname(exe_path())
 
 
-def find_7z_in_reg():
+def _find_7z_in_reg():
     regkeys = (r'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
                r'HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall')
 
@@ -80,30 +80,34 @@ def find_7z_in_reg():
     return b32_location, b64_location
 
 
-def path_of_7z():
+def get_z7_dir():
     if is_exe():
-        z7_path = os.path.join(meipass_path(), bundle_data_folder, Z7_EXE)
-        if os.path.isfile(z7_path):
-            return z7_path
+        z7_dir = os.path.join(meipass_path(), bundle_data_folder)
+        if os.path.isfile(z7_dir):
+            return z7_dir
 
-    b32_dir, b64_dir = find_7z_in_reg()
+    z7_32_dir, z7_64_dir = _find_7z_in_reg()
 
-    if b32_dir and os.path.isfile(os.path.join(b32_dir, Z7_EXE)):
-        return os.path.isfile(os.path.join(b32_dir, Z7_EXE))
+    if z7_32_dir and os.path.isfile(os.path.join(z7_32_dir, Z7_EXE)):
+        return z7_32_dir
 
-    elif b64_dir and os.path.isfile(os.path.join(b64_dir, Z7_EXE)):
-        return os.path.isfile(os.path.join(b64_dir, Z7_EXE))
+    elif z7_64_dir and os.path.isfile(os.path.join(z7_64_dir, Z7_EXE)):
+        return z7_64_dir
 
     else:
         logging.warning('7-Zip cannot be found.')
         return None
 
 
+def get_7z_path():
+    return os.path.join(get_z7_dir(), Z7_EXE)
+
+
 def bundle_files():
     from wpi.user_sample import config_, ps_
     return (
-        path_of_7z(),
-        os.path.join(os.path.split(path_of_7z()), Z7_DLL),
+        os.path.join(get_z7_dir(), Z7_EXE),
+        os.path.join(get_z7_dir(), Z7_DLL),
         config_.__file__,
         ps_.__file__,
     )
@@ -124,7 +128,7 @@ def load_config(path):
 def supply_config(config=None):
     c = Config(config)
 
-    c.z7_path = c.z7_path or path_of_7z()
+    c.z7_path = c.z7_path or get_7z_path()
 
     c.archive_exts = c.archive_exts or ['.zip', '.7z', '.rar', '.exe']
 
