@@ -93,8 +93,6 @@ def find_7z_path():
 
 
 def main():
-    import shutil
-
     import wpi.main
 
     from wpi import env
@@ -111,13 +109,8 @@ def main():
     user_config__path = os.path.join(config_dir, config__filename)
     user_config_path = os.path.join(config_dir, 'config.py')
 
-    if not os.path.exists(user_config__path) or \
-            open(config_.__file__, 'rb').read() != open(user_config__path, 'rb').read():
-        shutil.copyfile(config_.__file__, user_config__path)
-
-    if not os.path.exists(user_config_path):
-        shutil.copyfile(config_.__file__, user_config_path)
-        logging.warning('{} not found, copied. you may want to edit it and rerun again'.format(user_config_path))
+    wpi.main.copy_text_file(config_.__file__, user_config__path, even_exists=True)
+    wpi.main.copy_text_file(config_.__file__, user_config_path, even_exists=False)
 
     config = load_module(user_config_path)
 

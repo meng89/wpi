@@ -279,16 +279,46 @@ def install(printers, sc):
 
 
 def print_head():
-    print(
-        '###################################################\n'
-        '#                                                 #\n'
-        '#            Windows Printer Installer            #\n'
-        '#                                                 #\n'
-        '# Version: {}'.format(version.__version__) + ' ' * (51 - 11 - len(version.__version__) - 1) + '#\n'
-        '# Author: Chen Meng                               #\n'
-        '# HomePage: https://github.com/meng89/wpi         #\n'
-        '###################################################'
-    )
+    from shutil import get_terminal_size
+
+    conlose_len = get_terminal_size()[0]
+    cl = conlose_len
+
+    header_len = min([62, cl]) - 2
+
+    hl = header_len
+    item_left = 2
+
+    def _(s):
+        return '{:^{}}'.format(s, cl)
+
+    def sharp():
+        s = '#' * hl
+        return _(s)
+
+    def _wpi():
+        s = 'Windows Printer Installer'
+        return _(s)
+
+    def _item(k, v):
+        s = '{}: {}'.format(k, v)
+        s = (' ' * item_left) + s
+        s += ' ' * (hl - len(s))
+        return _(s)
+
+    ss = [
+        sharp(),
+        '',
+        _wpi(),
+        '',
+        _item('Version', 'abc'),
+        _item('Author', version.__version__),
+        _item('HomePage', 'https://github.com/meng89/wpi'),
+        sharp(),
+    ]
+    for _ in ss:
+        print(_)
+    # print('\n'.join(ss))
 
 
 def main():
@@ -385,9 +415,10 @@ def script_main(ps=None, config=None):
 
 
 def interactive_loop(sc, m_target_dir):
-    logging.info('m command target dir: ', m_target_dir)
+    logging.info('m command target dir: '.format(m_target_dir))
 
-    os.system('cls')
+    # os.system('cls')
+    print('', end='\n'*2)
     print_head()
     while True:
         print('m to make default sample config, sample ps and drivers structure... \n' +
@@ -414,10 +445,10 @@ def _m_cmd(target_dir):
     target_config__path = os.path.join(target_dir, get_config__filename())
     target_config_path = os.path.join(target_dir, def_config_filename)
 
-    copy_file(original_config__path(), target_config__path, even_exists=True)
-    copy_file(original_config__path(), target_config_path, even_exists=False)
+    copy_text_file(original_config__path(), target_config__path, even_exists=True)
+    copy_text_file(original_config__path(), target_config_path, even_exists=False)
 
-    copy_file(original_ps_sample_path(), os.path.join(target_dir, get_ps__filename()), even_exists=True)
+    copy_text_file(original_ps_sample_path(), os.path.join(target_dir, get_ps__filename()), even_exists=True)
 
     target_drivers_dir = os.path.join(target_dir, def_drivers_dirname)
     make_driver_dir_structure(target_drivers_dir)
@@ -432,17 +463,30 @@ def make_driver_dir_structure(drivers_dir):
                 pass
 
 
-def copy_file(source, target, even_exists=False):
+def copy_text_file(source, target, even_exists=False, lf2crlf=True):
+    import io
 
-    def _copy():
+    if lf2crlf:
+        with io.StringIO(newline='\r\n') as s_strio:
+            s_strio.writelines(open(source, 'r', encoding='utf8').readlines())
+            s_strio.seek(0)
+            s_bytes = bytes(s_strio.read(), encoding='utf8')
+    else:
+        s_bytes = open(source, 'rb').read()
+
+    def _write_target():
         os.makedirs(os.path.split(target)[0], exist_ok=True)
-        shutil.copyfile(source, target)
+        with open(target, 'wb') as f:
+            f.write(s_bytes)
 
     if os.path.exists(target):
-        if even_exists and open(source, 'rb').read() != open(target, 'rb').read():
-            _copy()
+        if even_exists:
+            if s_bytes != open(target, 'rb').read():
+                _write_target()
+        else:
+            pass
     else:
-        _copy()
+        _write_target()
 
 
 def original_config__path():
@@ -466,9 +510,9 @@ def original_ps_sample_path():
 
 
 def log_sys_info():
-    logging.info('OS bit:', CUR_BIT)
-    logging.info('OS release:', CUR_OS)
-    logging.info('Python bit:', PYTHON_BIT)
+    logging.info('OS bit: {}'.format(CUR_BIT))
+    logging.info('OS release: {}'.format(CUR_OS))
+    logging.info('Python bit: {}'.format(PYTHON_BIT))
     logging.info('Python sys.version: {}'.format(sys.version))
 
 
