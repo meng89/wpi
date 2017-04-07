@@ -14,7 +14,7 @@ https://www.resilio.com/platforms/desktop/
 
 同步密钥：
 
-B3KUPPWRRZIVFOF4FGBVWMYJS2C53VLQB
+BQ5LNWA34LIG3ETZMJ73ZEGMBW4P2WX24
 
 
 通过 Python 模块方式安装
