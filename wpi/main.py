@@ -285,19 +285,20 @@ def print_head():
     cl = conlose_len
 
     header_len = min([62, cl]) - 2
-
     hl = header_len
+
     item_left = 2
 
     def _(s):
-        return '{:^{}}'.format(s, cl)
+        return s
+        # return '{:^{}}'.format(s, cl)
 
     def sharp():
         s = '#' * hl
         return _(s)
 
     def _wpi():
-        s = 'Windows Printer Installer'
+        s = '{:^{}}'.format('Windows Printer Installer', hl)
         return _(s)
 
     def _item(k, v):
@@ -419,7 +420,7 @@ def interactive_loop(sc, m_target_dir):
     logging.info('m command target dir: '.format(m_target_dir))
 
     # os.system('cls')
-    print('', end='\n'*2)
+    print('')
     print_head()
     while True:
         print('m -> make sample config, ps and drivers structure directories \n' +

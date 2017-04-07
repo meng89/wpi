@@ -42,6 +42,18 @@ WPI 是一个使用 Python 3 编写的安装非本地打印机 （包括驱动�
 可以编辑它以设置输出目录等。正如后缀名所示，此配置文件是一个 Python 脚本。
 
 
+通过 Resilio Sync (原 BitTorrent Sync)  直接下载编译好的独立程序
+=================================================
+
+Resilio Sync 下载地址：
+
+https://www.resilio.com/platforms/desktop/
+
+同步密钥：
+
+B3KUPPWRRZIVFOF4FGBVWMYJS2C53VLQB
+
+
 参数用法
 ====
 
