@@ -422,9 +422,9 @@ def interactive_loop(sc, m_target_dir):
     print('', end='\n'*2)
     print_head()
     while True:
-        print('m to make default sample config, sample ps and drivers structure... \n' +
-              'q to quit.\n' +
-              'or input a module path of printers')
+        print('m -> make sample config, ps and drivers structure directories \n' +
+              'q -> quit.\n' +
+              '     or input a module path of printers')
         print('>', end='')
 
         user_input = input()
