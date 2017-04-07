@@ -139,8 +139,8 @@ def main():
         if verpatch_path is not None:
             run_verpatch(verpatch_path=verpatch_path, exe_path=os.path.join(output_dir, output_filename_ + '.exe'))
 
-    do_build(True, output_filename)
-    do_build(False, output_filename + '_nw')
+    do_build(True, '{}-{}'.format(output_filename, wpi.version.__version__))
+    # (do_build(False, '{}_nw-{}'.format(output_filename, wpi.version.__version__))
 
 
 if __name__ == '__main__':

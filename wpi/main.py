@@ -420,13 +420,13 @@ def interactive_loop(sc, m_target_dir):
     logging.info('m command target dir: '.format(m_target_dir))
 
     # os.system('cls')
-    print('')
     print_head()
     while True:
-        print('m -> make sample config, ps and drivers structure directories \n' +
-              'q -> quit.\n' +
-              '     or input a module path of printers')
-        print('>', end='')
+        print('\n')
+        print('Please input a printers file or a command:\n' +
+              '  m  Make sample of "config" & "ps", and make drivers structure directories.\n' +
+              '  q  Quit.')
+        print('("ps" file or cmd): ', end='')
 
         user_input = input()
 
