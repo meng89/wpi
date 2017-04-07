@@ -32,7 +32,7 @@ B3KUPPWRRZIVFOF4FGBVWMYJS2C53VLQB
 
 完成安装后，wpi 应该就可以直接在命令行下运行了。
 
-注：为了解压在压缩包里的驱动，应当下载安装 `7-Zip <http://www.7-zip.org/download.html>`_
+注：为了解压在压缩包里的驱动，应当下载安装 `7-Zip <http://www.7-zip.org/download.html>`_ ，
 如果想把 wpi 打包成可以多系统下可执行的独立程序，应当安装32位的 7-Zip
 
 生成独立的程序
