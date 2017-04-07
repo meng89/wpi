@@ -4,9 +4,9 @@ Windows Printer Installer
 WPI 是一个使用 Python 3 编写的安装非本地打印机 （包括驱动，端口） 的工具。
 
 
-通过 Resilio Sync (原 BitTorrent Sync)  直接下载编译好的独立程序
-=================================================
-如果你懒得自己编译生成独立的程序文件，那么可以使用 Resilio Sync 同步以生成好的程序。
+通过 Resilio Sync (原 BitTorrent Sync)  直接获取独立程序
+=============================================
+如果你只想获取独立的程序，那么需使用 Resilio Sync 同步以生成好的程序。
 
 Resilio Sync 下载地址：
 
@@ -17,8 +17,8 @@ https://www.resilio.com/platforms/desktop/
 B3KUPPWRRZIVFOF4FGBVWMYJS2C53VLQB
 
 
-安装
-====
+通过 Python 模块方式安装
+================
 
 先安装 `Python 3 <https://www.python.org/downloads/windows/>`_ (建议选择的 32位 3.4 版)，安装时注意勾选 pip 组件。
 
@@ -35,8 +35,8 @@ B3KUPPWRRZIVFOF4FGBVWMYJS2C53VLQB
 注：为了解压在压缩包里的驱动，应当下载安装 `7-Zip <http://www.7-zip.org/download.html>`_
 如果想把 wpi 打包成可以多系统下可执行的独立程序，应当安装32位的 7-Zip
 
-打包为独立的程序
-========
+生成独立的程序
+-------
 
 如果想在没有 Python 环境的系统下运行，得把 Python 环境和 wpi 及其依赖的模块打包在一起。
 先安装 Pyinstaller：
