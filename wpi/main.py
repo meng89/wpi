@@ -16,6 +16,18 @@ from wpi.env import ALL_BITS, CUR_BIT, CUR_OS, ALL_OS, PYTHON_BIT
 
 supplied_config = None
 
+DEFAULT_PS_NAME = 'ps.py'
+
+USER_SAMPLE_PS_NAME = '_ps.py'
+
+DEFAULT_DIRIVERS_NAME = 'drivers'
+
+
+# user_config_sample_path = os.path.join(user_wpi_dir, 'config.py')
+# user_config_path = os.path.join(user_wpi_dir, def_config_filename)
+
+logs_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi_logs')
+
 
 def split_all(path):
     names = []
@@ -189,9 +201,12 @@ def install_port(des_port):
         logging.warning('port: {} already existed, abort.'.format(des_port.name))
 
 
-def install_driver(des_driver, sc):
+def install_driver(des_driver, drivers_dir):
     from wpi.driver import Drivers, B32, B64
     from wpi import env
+    from wpi.env import ARCHIVE_EXTS, get_szip_path
+
+    szip_path = get_szip_path()
 
     sysdrivers = Drivers()
 
@@ -206,7 +221,7 @@ def install_driver(des_driver, sc):
 
     def _full(_):
         if not os.path.isabs(_):
-            return os.path.join(sc.drivers_dir, _)
+            return os.path.join(drivers_dir, _)
         return _
 
     if des_driver.inf_path:
@@ -219,19 +234,18 @@ def install_driver(des_driver, sc):
         if des_driver.inf_in_archive:
             iia = des_driver.inf_in_archive
         else:
-            infs = get_legal_infs_list(archive, des_driver.name, sc.z7_path)
+            infs = get_legal_infs_list(archive, des_driver.name, szip_path)
             iia = infs[0]
 
         logging.info('use archive: {}'.format(archive))
 
-        archivelib.extract_all(archive, tempdir, sc.z7_path)
+        archivelib.extract_all(archive, tempdir, szip_path)
 
         inf_path = os.path.join(tempdir, iia)
 
     else:
         for must_have in ({CUR_BIT, CUR_OS}, {CUR_BIT}):
-            archive_infs = _get_archive_infs_list(des_driver.name, must_have, sc.drivers_dir,
-                                                  sc.archive_exts, sc.z7_path)
+            archive_infs = _get_archive_infs_list(des_driver.name, must_have, drivers_dir, ARCHIVE_EXTS, szip_path)
 
             if archive_infs:
                 archive = archive_infs[0][0]
@@ -239,7 +253,7 @@ def install_driver(des_driver, sc):
                 iia = archive_infs[0][1][0]
                 logging.info('inf_in_archive: {}'.format(iia))
 
-                archivelib.extract_all(archive, tempdir, sc.z7_path)
+                archivelib.extract_all(archive, tempdir, szip_path)
                 inf_path = os.path.join(tempdir, iia)
 
     if inf_path and is_match(open(inf_path, 'rb').read(), des_driver.name):
@@ -266,10 +280,10 @@ def install_printer(printer_name, driver_name, port_name):
         logging.warning('printer: {} already existed, abord.'.format(printer_name))
 
 
-def install(printers, sc):
+def install(printers, drivers_dir):
     for p in printers:
         try:
-            install_driver(p.driver, sc)
+            install_driver(p.driver, drivers_dir)
             install_port(p.port)
             install_printer(p.name, p.driver.name, p.port.name)
 
@@ -323,7 +337,7 @@ def print_head():
 
 
 def main():
-    from wpi.env import is_exe, user_logs_dir
+    from wpi.env import is_exe
     from wpi.log import set_file_handler, set_stream_handler
 
     if not ctypes.windll.shell32.IsUserAnAdmin():
@@ -341,12 +355,14 @@ def main():
             kwargs[p_a[0]] = p_a[1]
 
     log_filename = datetime.datetime.now().strftime('%Y_%m_%d-%H_%M_%S_%f') + '.log.txt'
-    os.makedirs(user_logs_dir, exist_ok=True)
+    os.makedirs(logs_dir, exist_ok=True)
 
-    set_file_handler(os.path.join(user_logs_dir, log_filename))
+    set_file_handler(os.path.join(logs_dir, log_filename))
     set_stream_handler()
 
     log_sys_info()
+
+    os.chdir(tempfile.gettempdir())
 
     if is_exe():
         exe_main(*args, **kwargs)
@@ -354,104 +370,72 @@ def main():
         script_main(*args, **kwargs)
 
 
-def exe_main(ps=None, config=None):
-    import tempfile
+def exe_main(ps=None, drivers=None):
+    from wpi.env import exe_dir
 
-    os.chdir(tempfile.gettempdir())
-
-    from wpi.env import load_config, Config, supply_config, exe_dir,\
-        def_ps_filename, def_config_filename, def_drivers_dirname
+    if drivers is not None:
+        drivers_dir = drivers
+    else:
+        drivers_dir = os.path.join(exe_dir(), DEFAULT_DIRIVERS_NAME)
 
     if ps is not None:
         module_ = load_module(ps)
-    elif os.path.exists(os.path.join(exe_dir(), def_ps_filename)):
-        module_ = load_module(os.path.join(exe_dir(), def_ps_filename))
+    elif os.path.exists(os.path.join(exe_dir(), DEFAULT_PS_NAME)):
+        module_ = load_module(os.path.join(exe_dir(), DEFAULT_PS_NAME))
     else:
         module_ = None
 
-    if config:
-        sc = supply_config(load_config(config))
-    elif os.path.exists(os.path.join(exe_dir(), def_config_filename)):
-        sc = supply_config(load_config(os.path.join(exe_dir(), def_config_filename)))
-    else:
-        sc = supply_config(Config())
-
-    if sc.drivers_dir is None:
-        sc.drivers_dir = os.path.join(exe_dir(), def_drivers_dirname)
-
     if module_ is not None:
-        install(module_.printers, sc)
-        exit()
+        install(module_.printers, drivers_dir)
+        sys.exit()
 
-    interactive_loop(sc, exe_dir())
+    interactive_loop(drivers_dir, exe_dir())
 
 
-def script_main(ps=None, config=None):
-    import tempfile
+def script_main(ps=None, drivers=None):
+    user_wpi_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi')
 
-    os.chdir(tempfile.gettempdir())
-
-    from wpi.env import load_config, Config, supply_config, user_wpi_dir, def_config_filename, def_drivers_dirname
+    if drivers is not None:
+        drivers_dir = drivers
+    else:
+        drivers_dir = os.path.join(user_wpi_dir, DEFAULT_DIRIVERS_NAME)
 
     if ps is not None:
         module_ = load_module(ps)
     else:
         module_ = None
 
-    if config:
-        sc = supply_config(load_config(config))
-    elif os.path.exists(os.path.join(user_wpi_dir, def_config_filename)):
-        sc = supply_config(load_config(os.path.join(user_wpi_dir, def_config_filename)))
-    else:
-        sc = supply_config(Config())
-
-    if sc.drivers_dir is None:
-        sc.drivers_dir = os.path.join(user_wpi_dir, def_drivers_dirname)
-
     if module_ is not None:
-        install(module_.printers, sc)
-        exit()
+        install(module_.printers, drivers_dir)
+        sys.exit()
 
-    interactive_loop(sc, user_wpi_dir)
+    interactive_loop(drivers_dir, user_wpi_dir)
 
 
-def interactive_loop(sc, m_target_dir):
+def interactive_loop(drivers_dir, m_target_dir):
     logging.info('m command target dir: '.format(m_target_dir))
 
     print_head()
     while True:
         print('\n')
         print('Please input a printers file or a command:\n' +
-              '  m  Make sample of "config" & "ps", and make drivers structure directories.\n' +
+              '  m  Make sample of "ps" and make drivers structure directories.\n' +
               '  q  Quit.')
         print('"ps" file or cmd: ', end='')
 
         user_input = input()
 
         if user_input.strip().lower() == 'm':
-            _m_cmd(m_target_dir)
+            copy_text_file(original_ps_sample_path(), os.path.join(m_target_dir, USER_SAMPLE_PS_NAME), even_exists=True)
+            target_drivers_dir = os.path.join(m_target_dir, DEFAULT_DIRIVERS_NAME)
+            make_driver_dir_structure(target_drivers_dir)
 
         elif user_input.strip().lower() in ('q', 'quit', 'e', 'exit'):
             break
 
         elif user_input.strip().lower().endswith('.py'):
             module_ = load_module(user_input.strip())
-            install(module_.printers, sc)
-
-
-def _m_cmd(target_dir):
-    from wpi.env import def_config_filename, def_drivers_dirname, get_config__filename, get_ps__filename
-
-    target_config__path = os.path.join(target_dir, get_config__filename())
-    target_config_path = os.path.join(target_dir, def_config_filename)
-
-    copy_text_file(original_config__path(), target_config__path, even_exists=True)
-    copy_text_file(original_config__path(), target_config_path, even_exists=False)
-
-    copy_text_file(original_ps_sample_path(), os.path.join(target_dir, get_ps__filename()), even_exists=True)
-
-    target_drivers_dir = os.path.join(target_dir, def_drivers_dirname)
-    make_driver_dir_structure(target_drivers_dir)
+            install(module_.printers, drivers_dir)
 
 
 def make_driver_dir_structure(drivers_dir):
@@ -489,24 +473,16 @@ def copy_text_file(source, target, even_exists=False, lf2crlf=True):
         _write_target()
 
 
-def original_config__path():
-    from wpi.env import is_exe, meipass_path, bundle_data_folder, get_config__filename
-
-    if is_exe():
-        return os.path.join(meipass_path(), bundle_data_folder, get_config__filename())
-    else:
-        from wpi.user_sample import config_
-        return config_.__file__
-
-
 def original_ps_sample_path():
-    from wpi.env import get_ps__filename, is_exe, meipass_path, bundle_data_folder
+    from wpi.env import is_exe, meipass_path, BUNDLE_DATA_FOLDER
+    from wpi.user_sample import ps
 
     if is_exe():
-        return os.path.join(meipass_path(), bundle_data_folder, get_ps__filename())
+        return os.path.join(meipass_path(), BUNDLE_DATA_FOLDER,
+                            os.path.splitext(os.path.split(ps.__file__)[1])[0] + '.py')
     else:
-        from wpi.user_sample import ps_
-        return ps_.__file__
+        from wpi.user_sample import ps
+        return ps.__file__
 
 
 def log_sys_info():

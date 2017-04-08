@@ -133,7 +133,7 @@ def main():
             name=output_filename_,
             console=console_,
             upx_dir=upx_dir,
-            binarys=[(path, env.bundle_data_folder) for path in env.bundle_files() if path is not None]
+            binarys=[(path, env.BUNDLE_DATA_FOLDER) for path in env.bundle_files() if path is not None]
         )
 
         if verpatch_path is not None:

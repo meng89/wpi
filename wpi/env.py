@@ -5,35 +5,10 @@ import sys
 
 from wpi import load_module
 
-bundle_data_folder = '_data'
+BUNDLE_DATA_FOLDER = '_data'
 
-Z7_EXE = '7z.exe'
-Z7_DLL = '7z.dll'
-
-
-def get_ps__filename():
-    from wpi.user_sample import ps_
-
-    return os.path.splitext(os.path.split(ps_.__file__)[1])[0] + '.py'
-
-
-def get_config__filename():
-    from wpi.user_sample import config_
-
-    return os.path.splitext(os.path.split(config_.__file__)[1])[0] + '.py'
-
-
-def_config_filename = 'config.py'
-
-def_ps_filename = 'ps.py'
-
-def_drivers_dirname = 'drivers'
-
-user_wpi_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi')
-user_config_sample_path = os.path.join(user_wpi_dir, 'config_.py')
-user_config_path = os.path.join(user_wpi_dir, def_config_filename)
-
-user_logs_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi_logs')
+SZIP_EXE = '7z.exe'
+SZIP_DLL = '7z.dll'
 
 
 def is_exe():
@@ -79,34 +54,34 @@ def _find_7z_in_reg():
 
 def get_7z_dir():
     if is_exe():
-        z7_dir = os.path.join(meipass_path(), bundle_data_folder)
+        z7_dir = os.path.join(meipass_path(), BUNDLE_DATA_FOLDER)
         if os.path.isfile(z7_dir):
             return z7_dir
 
-    z7_32_dir, z7_64_dir = _find_7z_in_reg()
+    szip_32_dir, szip_64_dir = _find_7z_in_reg()
 
-    if z7_32_dir and os.path.isfile(os.path.join(z7_32_dir, Z7_EXE)):
-        return z7_32_dir
+    if szip_32_dir and os.path.isfile(os.path.join(szip_32_dir, SZIP_EXE)):
+        return szip_32_dir
 
-    elif z7_64_dir and os.path.isfile(os.path.join(z7_64_dir, Z7_EXE)):
-        return z7_64_dir
+    elif szip_64_dir and os.path.isfile(os.path.join(szip_64_dir, SZIP_EXE)):
+        return szip_64_dir
 
     else:
         logging.warning('7-Zip cannot be found.')
         return None
 
 
-def get_7z_path():
-    return os.path.join(get_7z_dir(), Z7_EXE)
+def get_szip_path():
+    return os.path.join(get_7z_dir(), SZIP_EXE)
 
 
 def bundle_files():
-    from wpi.user_sample import config_, ps_
+    from wpi.user_sample import config, ps
     return (
-        os.path.join(get_7z_dir(), Z7_EXE),
-        os.path.join(get_7z_dir(), Z7_DLL),
-        config_.__file__,
-        ps_.__file__,
+        os.path.join(get_7z_dir(), SZIP_EXE),
+        os.path.join(get_7z_dir(), SZIP_DLL),
+        config.__file__,
+        ps.__file__,
     )
 
 
@@ -125,12 +100,13 @@ def load_config(path):
 def supply_config(config=None):
     c = Config(config)
 
-    c.z7_path = c.z7_path or get_7z_path()
+    c.z7_path = c.z7_path or get_szip_path()
 
     c.archive_exts = c.archive_exts or ['.zip', '.7z', '.rar', '.exe']
 
     return c
 
+ARCHIVE_EXTS = ['.zip', '.7z', '.rar', '.exe']
 
 CUR_OS = platform.release().lower()
 ALL_OS = {'xp', '7', '10'} | {CUR_OS}
