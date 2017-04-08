@@ -357,6 +357,8 @@ def main():
 def exe_main(ps=None, config=None):
     import tempfile
 
+    os.chdir(tempfile.gettempdir())
+
     from wpi.env import load_config, Config, supply_config, exe_dir,\
         def_ps_filename, def_config_filename, def_drivers_dirname
 
@@ -374,20 +376,20 @@ def exe_main(ps=None, config=None):
     else:
         sc = supply_config(Config())
 
-    os.chdir(tempfile.gettempdir())
+    if sc.drivers_dir is None:
+        sc.drivers_dir = os.path.join(exe_dir(), def_drivers_dirname)
 
     if module_ is not None:
         install(module_.printers, sc)
         exit()
-
-    if sc.drivers_dir is None:
-        sc.drivers_dir = os.path.join(exe_dir(), def_drivers_dirname)
 
     interactive_loop(sc, exe_dir())
 
 
 def script_main(ps=None, config=None):
     import tempfile
+
+    os.chdir(tempfile.gettempdir())
 
     from wpi.env import load_config, Config, supply_config, user_wpi_dir, def_config_filename, def_drivers_dirname
 
@@ -403,14 +405,12 @@ def script_main(ps=None, config=None):
     else:
         sc = supply_config(Config())
 
-    os.chdir(tempfile.gettempdir())
+    if sc.drivers_dir is None:
+        sc.drivers_dir = os.path.join(user_wpi_dir, def_drivers_dirname)
 
     if module_ is not None:
         install(module_.printers, sc)
         exit()
-
-    if sc.drivers_dir is None:
-        sc.drivers_dir = os.path.join(user_wpi_dir, def_drivers_dirname)
 
     interactive_loop(sc, user_wpi_dir)
 

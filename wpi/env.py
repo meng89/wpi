@@ -25,7 +25,7 @@ def get_config__filename():
 
 def_config_filename = 'config.py'
 
-def_ps_filename = '_.py'
+def_ps_filename = 'ps.py'
 
 def_drivers_dirname = 'drivers'
 
