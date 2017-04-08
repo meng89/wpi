@@ -2,7 +2,6 @@ import ctypes
 import datetime
 import logging
 import os
-import shutil
 import sys
 import tempfile
 
@@ -285,19 +284,20 @@ def print_head():
     cl = conlose_len
 
     header_len = min([62, cl]) - 2
-
     hl = header_len
+
     item_left = 2
 
     def _(s):
-        return '{:^{}}'.format(s, cl)
+        return s
+        # return '{:^{}}'.format(s, cl)
 
     def sharp():
         s = '#' * hl
         return _(s)
 
     def _wpi():
-        s = 'Windows Printer Installer'
+        s = '{:^{}}'.format('Windows Printer Installer', hl)
         return _(s)
 
     def _item(k, v):
@@ -365,7 +365,7 @@ def exe_main(ps=None, config=None):
     if ps is not None:
         module_ = load_module(ps)
     elif os.path.exists(os.path.join(exe_dir(), def_ps_filename)):
-        module_ = load_config(os.path.join(exe_dir(), def_ps_filename))
+        module_ = load_module(os.path.join(exe_dir(), def_ps_filename))
     else:
         module_ = None
 
@@ -418,14 +418,13 @@ def script_main(ps=None, config=None):
 def interactive_loop(sc, m_target_dir):
     logging.info('m command target dir: '.format(m_target_dir))
 
-    # os.system('cls')
-    print('', end='\n'*2)
     print_head()
     while True:
-        print('m -> make sample config, ps and drivers structure directories \n' +
-              'q -> quit.\n' +
-              '     or input a module path of printers')
-        print('>', end='')
+        print('\n')
+        print('Please input a printers file or a command:\n' +
+              '  m  Make sample of "config" & "ps", and make drivers structure directories.\n' +
+              '  q  Quit.')
+        print('"ps" file or cmd: ', end='')
 
         user_input = input()
 
