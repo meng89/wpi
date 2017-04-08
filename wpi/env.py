@@ -76,11 +76,10 @@ def get_szip_path():
 
 
 def bundle_files():
-    from wpi.user_sample import config, ps
+    from wpi.user_sample import ps
     return (
         os.path.join(get_7z_dir(), SZIP_EXE),
         os.path.join(get_7z_dir(), SZIP_DLL),
-        config.__file__,
         ps.__file__,
     )
 
