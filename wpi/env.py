@@ -3,8 +3,6 @@ import os
 import platform
 import sys
 
-from wpi import load_module
-
 BUNDLE_DATA_FOLDER = '_data'
 
 SZIP_EXE = '7z.exe'
@@ -34,9 +32,6 @@ def exe_dir():
 
 
 def _find_7z_in_reg():
-    # regkeys = (r'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall',
-    #           r'HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall')
-
     from wpi.reg import Node
 
     b32_location = None
@@ -52,7 +47,7 @@ def _find_7z_in_reg():
     return b32_location, b64_location
 
 
-def get_7z_dir():
+def get_szip_dir():
     if is_exe():
         z7_dir = os.path.join(meipass_path(), BUNDLE_DATA_FOLDER)
         if os.path.isfile(z7_dir):
@@ -72,16 +67,7 @@ def get_7z_dir():
 
 
 def get_szip_path():
-    return os.path.join(get_7z_dir(), SZIP_EXE)
-
-
-def bundle_files():
-    from wpi.user_sample import ps
-    return (
-        os.path.join(get_7z_dir(), SZIP_EXE),
-        os.path.join(get_7z_dir(), SZIP_DLL),
-        ps.__file__,
-    )
+    return os.path.join(get_szip_dir(), SZIP_EXE)
 
 
 class Config:
@@ -93,6 +79,8 @@ class Config:
 
 
 def load_config(path):
+    from wpi import load_module
+
     return Config(load_module(path))
 
 
@@ -105,14 +93,18 @@ def supply_config(config=None):
 
     return c
 
+
 ARCHIVE_EXTS = ['.zip', '.7z', '.rar', '.exe']
+
 
 CUR_OS = platform.release().lower()
 ALL_OS = {'xp', '7', '10'} | {CUR_OS}
 
+
 B32 = '32'
 B64 = '64'
 ALL_BITS = {'32', '64'}
+
 
 if platform.machine().endswith('64'):
     CUR_BIT = '64'

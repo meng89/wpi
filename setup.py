@@ -42,7 +42,6 @@ setup(name=NAME,
       packages=[
           'wpi',
           'wpi.inf',
-          'wpi.user_sample',
           'wpi2exe',
       ],
       entry_points={

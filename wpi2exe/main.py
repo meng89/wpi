@@ -92,6 +92,16 @@ def find_7z_path():
                 print(subn.tips['InstallLocation'])
 
 
+def bundle_files():
+    from wpi import ps_sample
+    from wpi.env import get_szip_dir, SZIP_EXE, SZIP_DLL
+    return (
+        os.path.join(get_szip_dir(), SZIP_EXE),
+        os.path.join(get_szip_dir(), SZIP_DLL),
+        ps_sample.__file__,
+    )
+
+
 def main():
     import wpi.main
 
@@ -99,6 +109,8 @@ def main():
     from wpi import load_module
 
     from wpi2exe import config_
+
+    os.chdir(tempfile.gettempdir())
 
     set_logging()
 
@@ -133,7 +145,7 @@ def main():
             name=output_filename_,
             console=console_,
             upx_dir=upx_dir,
-            binarys=[(path, env.BUNDLE_DATA_FOLDER) for path in env.bundle_files() if path is not None]
+            binarys=[(path, env.BUNDLE_DATA_FOLDER) for path in bundle_files() if path is not None]
         )
 
         if verpatch_path is not None:

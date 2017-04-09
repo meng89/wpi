@@ -17,7 +17,7 @@ pa2 = Printer(
 
 
 # pb1 和 pb2 也是除了显示的打印机名不一样，其它都一样。
-# 现在使用的端口是 Windows 共享资源形式，姑且称之为 smb 端口吧。
+# 现在使用的端口是 Windows 共享资源形式，姑且称之为 SMB 端口吧。
 pb1 = ep(r'\\Printer-Server\HP LaserJet 1020', 'HP LaserJet 1020', 'hp 1020 1')
 
 pb2 = Printer(

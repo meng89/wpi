@@ -8,13 +8,9 @@ import tempfile
 import chardet
 
 import wpi.inf
-
 import wpi.log
-
 from wpi import load_module, archivelib, version
 from wpi.env import ALL_BITS, CUR_BIT, CUR_OS, ALL_OS, PYTHON_BIT
-
-supplied_config = None
 
 DEFAULT_PS_NAME = 'ps.py'
 
@@ -22,11 +18,7 @@ USER_SAMPLE_PS_NAME = '_ps.py'
 
 DEFAULT_DIRIVERS_NAME = 'drivers'
 
-
-# user_config_sample_path = os.path.join(user_wpi_dir, 'config.py')
-# user_config_path = os.path.join(user_wpi_dir, def_config_filename)
-
-logs_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi_logs')
+LOGS_DIR = os.path.join(os.getenv('LOCALAPPDATA'), 'wpi_logs')
 
 
 def split_all(path):
@@ -58,7 +50,7 @@ def check_dirs_names(names: set, must_have: set, must_have_no: set, case_sensiti
     return False
 
 
-def get_all_files(d):
+def list_files(d):
     all_files = []
 
     for root, dirs, files in os.walk(d):
@@ -68,13 +60,26 @@ def get_all_files(d):
     return all_files
 
 
-def is_match(inf_bytes, driver):
+def _get_models(inf_bytes):
+
     try:
         inf_data = wpi.inf.loads.loads(inf_bytes.decode(chardet.detect(inf_bytes)['encoding']))
+        models = wpi.inf.utils.get_models(inf_data)
     except Exception:
-        return False
+        return {}
+    else:
+        return models
 
-    models = wpi.inf.utils.get_models(inf_data)
+
+def list_infs(archive):
+    from wpi.archivelib import list_names
+    from wpi.env import get_szip_path
+
+    return [_ for _ in list_names(archive, get_szip_path()) if _.lower().endswith('.inf')]
+
+
+def is_match(inf_bytes, driver):
+    models = _get_models(inf_bytes)
 
     for model, namek_files_hids in models.items():
         if CUR_BIT == '32' and model[1] is not None and model[1].lower() != 'ntx86':
@@ -89,34 +94,18 @@ def is_match(inf_bytes, driver):
     return False
 
 
-def get_legal_archive_infs_list(best_archives, driver, z7_path):
-    legal_archives = []
-    for archive in best_archives:
-
-        legal_infs = []
-        for name in archivelib.list_names(archive, z7_path):
-            if os.path.splitext(name)[1].lower() == '.inf':
-                inf_bytes = archivelib.read(archive, name, z7_path)
-                if is_match(inf_bytes, driver):
-                    legal_infs.append(name)
-
-            if legal_infs:
-                legal_archives.append((archive, legal_infs))
-
-    return legal_archives
-
-
 def get_legal_infs_list(archive, driver, z7_path):
     legal_infs = []
-    for name in archivelib.list_names(archive, z7_path):
-        if os.path.splitext(name)[1].lower() == '.inf':
-            inf_bytes = archivelib.read(archive, name, z7_path)
-            if is_match(inf_bytes, driver):
-                legal_infs.append(name)
+
+    for inf in list_infs(archive):
+        inf_bytes = archivelib.read(archive, inf, z7_path)
+        if is_match(inf_bytes, driver):
+            legal_infs.append(inf)
+
     return legal_infs
 
 
-def filter_by_exts(files, exts, case_sensitive=False):
+def filter_files_by_exts(files, exts, case_sensitive=False):
     new_files = []
     if case_sensitive:
         for file in files:
@@ -129,12 +118,12 @@ def filter_by_exts(files, exts, case_sensitive=False):
     return new_files
 
 
-def filter_by_isarchive(files, z7_path):
+def filter_files_by_isarchive(files, z7_path):
     files = [file for file in files if archivelib.is_can_handle(file, z7_path)]
     return files
 
 
-def filter_by_dirs(files, must_have, must_have_no, drivers_dir):
+def filter_files_by_dirs(files, must_have, must_have_no, drivers_dir):
     new_files = []
 
     delete_root = drivers_dir
@@ -154,9 +143,9 @@ def filter_by_dirs(files, must_have, must_have_no, drivers_dir):
 
 def _get_archive_infs_list(driver, must_have, drivers_dir, archive_exts, z7_path):
 
-    archives = filter_by_isarchive(
-                filter_by_dirs(
-                    filter_by_exts(get_all_files(drivers_dir), archive_exts),
+    archives = filter_files_by_isarchive(
+                filter_files_by_dirs(
+                    filter_files_by_exts(list_files(drivers_dir), archive_exts),
                     must_have,
                     (ALL_BITS | ALL_OS) - must_have,
                     drivers_dir
@@ -198,7 +187,7 @@ def install_port(des_port):
 
         sysports.save()
     else:
-        logging.warning('port: {} already existed, abort.'.format(des_port.name))
+        logging.warning('port: {} already existed, abort.'.format(repr(des_port.name)))
 
 
 def install_driver(des_driver, drivers_dir):
@@ -212,7 +201,7 @@ def install_driver(des_driver, drivers_dir):
 
     for one in sysdrivers:
         if one[0] == des_driver.name and (one[2], CUR_BIT) in ((B32, env.B32), (B64, env.B64)):
-            logging.warning('driver: {} already existed, abort.'.format(des_driver.name))
+            logging.warning('driver: {} already existed, abort.'.format(repr(des_driver.name)))
             return None
 
     inf_path = None
@@ -237,7 +226,7 @@ def install_driver(des_driver, drivers_dir):
             infs = get_legal_infs_list(archive, des_driver.name, szip_path)
             iia = infs[0]
 
-        logging.info('use archive: {}'.format(archive))
+        logging.info('use archive: {}'.format(repr(archive)))
 
         archivelib.extract_all(archive, tempdir, szip_path)
 
@@ -249,21 +238,21 @@ def install_driver(des_driver, drivers_dir):
 
             if archive_infs:
                 archive = archive_infs[0][0]
-                logging.info('use matched archive: {}'.format(archive))
+                logging.info('use matched archive: {}'.format(repr(archive)))
                 iia = archive_infs[0][1][0]
-                logging.info('inf_in_archive: {}'.format(iia))
+                logging.info('inf_in_archive: {}'.format(repr(iia)))
 
                 archivelib.extract_all(archive, tempdir, szip_path)
                 inf_path = os.path.join(tempdir, iia)
 
     if inf_path and is_match(open(inf_path, 'rb').read(), des_driver.name):
-        logging.info('use inf_path: {}, driver name: {}'.format(inf_path, des_driver.name))
+        logging.info('use inf_path: {}, driver name: {}'.format(repr(inf_path), repr(des_driver.name)))
         sysdrivers.add_by_inf(inf_path, des_driver.name)
         logging.info('done')
     else:
-        logging.warning('bad driver -> name: {}, archive: {}, inf_path:{}'.format(des_driver.name,
-                                                                                  des_driver.archive,
-                                                                                  des_driver.inf_path))
+        logging.warning('bad driver -> name: {}, archive: {}, inf_path:{}'.format(repr(des_driver.name),
+                                                                                  repr(des_driver.archive),
+                                                                                  repr(des_driver.inf_path)))
         raise InstallationFailed
 
 
@@ -277,7 +266,7 @@ def install_printer(printer_name, driver_name, port_name):
         printer.port_name = port_name
         sysprinters.save()
     else:
-        logging.warning('printer: {} already existed, abord.'.format(printer_name))
+        logging.warning('printer: {} already existed, abord.'.format(repr(printer_name)))
 
 
 def install(printers, drivers_dir):
@@ -288,7 +277,7 @@ def install(printers, drivers_dir):
             install_printer(p.name, p.driver.name, p.port.name)
 
         except InstallationFailed:
-            logging.error('install printer: {} failed.'.format(p.name))
+            logging.error('install printer: {} failed.'.format(repr(p.name)))
 
 
 def print_head():
@@ -355,9 +344,9 @@ def main():
             kwargs[p_a[0]] = p_a[1]
 
     log_filename = datetime.datetime.now().strftime('%Y_%m_%d-%H_%M_%S_%f') + '.log.txt'
-    os.makedirs(logs_dir, exist_ok=True)
+    os.makedirs(LOGS_DIR, exist_ok=True)
 
-    set_file_handler(os.path.join(logs_dir, log_filename))
+    set_file_handler(os.path.join(LOGS_DIR, log_filename))
     set_stream_handler()
 
     log_sys_info()
@@ -417,25 +406,60 @@ def interactive_loop(drivers_dir, m_target_dir):
 
     print_head()
     while True:
-        print('\n')
-        print('Please input a printers file or a command:\n' +
+        print()
+        print('Please input a command or printers file:\n' +
               '  m  Make sample of "ps" and make drivers structure directories.\n' +
+              '  l  List all driver names in an archive or an inf file.\n' +
               '  q  Quit.')
-        print('"ps" file or cmd: ', end='')
+        print('Cmd or "ps" file: ', end='')
 
-        user_input = input()
+        user_input = input().strip()
 
-        if user_input.strip().lower() == 'm':
+        if user_input.lower() == 'm':
             copy_text_file(original_ps_sample_path(), os.path.join(m_target_dir, USER_SAMPLE_PS_NAME), even_exists=True)
             target_drivers_dir = os.path.join(m_target_dir, DEFAULT_DIRIVERS_NAME)
             make_driver_dir_structure(target_drivers_dir)
 
-        elif user_input.strip().lower() in ('q', 'quit', 'e', 'exit'):
+        elif user_input.lower() == 'l':
+            list_driver_loop()
+
+        elif user_input.lower() in ('q', 'quit', 'e', 'exit'):
             break
 
         elif user_input.strip().lower().endswith('.py'):
             module_ = load_module(user_input.strip())
             install(module_.printers, drivers_dir)
+
+
+def list_driver_loop():
+    from wpi.archivelib import read
+    from wpi.env import get_szip_path
+
+    def _list(models, indent=4, step=4):
+        for platform, _ in models.items():
+            print('{}{}, {}:'.format(' '*indent, repr(platform[1]), repr(platform[2])))
+            for key in _.keys():
+                print('{}{}'.format(' '*indent + ' '*step, repr(key)))
+
+    while True:
+        print()
+        print('Archive or inf(r to return): ', end='')
+        user_input = input().strip()
+
+        if user_input.lower() in ('r', 'q', 'e'):
+            return
+
+        elif user_input.lower().endswith('.inf'):
+            _models = _get_models(open(user_input, 'rb').read())
+            _list(_models)
+
+        else:
+            for inf in list_infs(user_input):
+                _models = _get_models(read(user_input, inf, get_szip_path()))
+                if _models:
+                    print()
+                    print('  {}:'.format(repr(inf)))
+                    _list(_models, indent=6)
 
 
 def make_driver_dir_structure(drivers_dir):
@@ -474,15 +498,14 @@ def copy_text_file(source, target, even_exists=False, lf2crlf=True):
 
 
 def original_ps_sample_path():
+    from wpi import ps_sample
     from wpi.env import is_exe, meipass_path, BUNDLE_DATA_FOLDER
-    from wpi.user_sample import ps
 
     if is_exe():
         return os.path.join(meipass_path(), BUNDLE_DATA_FOLDER,
-                            os.path.splitext(os.path.split(ps.__file__)[1])[0] + '.py')
+                            os.path.splitext(os.path.split(ps_sample.__file__)[1])[0] + '.py')
     else:
-        from wpi.user_sample import ps
-        return ps.__file__
+        return ps_sample.__file__
 
 
 def log_sys_info():
