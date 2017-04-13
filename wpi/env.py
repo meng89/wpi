@@ -49,7 +49,7 @@ def _find_7z_in_reg():
 
 def get_szip_dir():
     if is_exe():
-        z7_dir = os.path.join(meipass_path(), BUNDLE_DATA_FOLDER)
+        z7_dir = os.path.join(meipass_path(), BUNDLE_DATA_FOLDER, SZIP_EXE)
         if os.path.isfile(z7_dir):
             return z7_dir
 

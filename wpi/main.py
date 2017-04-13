@@ -271,13 +271,24 @@ def install_printer(printer_name, driver_name, port_name):
 
 def install(printers, drivers_dir):
     for p in printers:
+
         try:
             install_driver(p.driver, drivers_dir)
-            install_port(p.port)
-            install_printer(p.name, p.driver.name, p.port.name)
+        except Exception as e:
+            logging.error('install driver {} failed: {}.'.format(repr(p.driver), repr(e.args)))
+            continue
 
-        except InstallationFailed:
-            logging.error('install printer: {} failed.'.format(repr(p.name)))
+        try:
+            install_port(p.port)
+        except Exception as e:
+            logging.error('install port {} failed: {}.'.format(repr(p.port.name), repr(e.args)))
+            continue
+
+        try:
+            install_printer(p.name, p.driver.name, p.port.name)
+        except Exception as e:
+            logging.error('install port {} failed: {}.'.format(repr(p.name), repr(e.args)))
+            continue
 
 
 def print_head():

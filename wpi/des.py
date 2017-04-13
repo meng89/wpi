@@ -13,7 +13,7 @@ class RAWPort(TCPIPPort):
         self.address = address
         self.port = port or 9100
 
-        self.__dict__['name'] = name or address + '_' + str(self.port)
+        self.__dict__['name'] = '{}:{}'.format(name or address, str(self.port))
 
         self.enable_snmp = enable_snmp
         self.snmp_dev_index = snmp_dev_index
@@ -29,7 +29,7 @@ class LPRPort(TCPIPPort):
         self.address = address
         self.port = port or 515
 
-        self.__dict__['name'] = name or address + '_' + str(self.port)
+        self.__dict__['name'] = '{}:{}'.format(name or address, str(self.port))
 
         self.enable_snmp = enable_snmp
         self.snmp_dev_index = snmp_dev_index
